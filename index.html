@@ -1,69 +1,253 @@
 <!doctype html>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fuel Finder</title>
-<style>
-  body{font:14px system-ui;margin:0;background:#0f0f10;color:#eee}
-  .wrap{max-width:720px;margin:20px auto;padding:12px}
-  .card{background:#15161a;border:1px solid #26282d;border-radius:12px;padding:12px}
-  label{display:block;font-size:12px;color:#9aa0a6;margin:8px 0 4px}
-  select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2b30;background:#101114;color:#eee}
-  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .list{margin-top:12px;display:grid;gap:10px}
-  .item{background:#121317;border:1px solid #23252a;border-radius:10px;padding:10px}
-  .muted{color:#9aa0a6}
-  .price{font-weight:700}
-</style>
-<div class="wrap">
-  <h2>⛽ Fuel Finder</h2>
-  <div class="card">
-    <div class="grid">
-      <div><label>Страна</label><select id="country"></select></div>
-      <div><label>Город</label><select id="city"><option value="">Все</option></select></div>
-      <div><label>Топливо</label>
-        <select id="fuel"><option>95</option><option>98</option><option>diesel</option><option>lpg</option></select>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Fuel Finder — веб-приложение</title>
+  <meta name="description" content="Поиск актуальных цен на топливо по странам и городам (LV/LT/EE)"/>
+  <style>
+    :root{
+      --bg:#0f0f10; --card:#15161a; --border:#26282d; --muted:#9aa0a6; --text:#e9eaee; --accent:#4da3ff;
+      --btn:#1a73e8; --btn-text:#fff; --item:#121317; --ok:#2ea043; --err:#ef4444;
+    }
+    /* Автоподстройка под тему Telegram WebApp */
+    body.tg-dark{ --bg:#0b0e11; --card:#111418; --border:#1e2228; --muted:#8f98a3; --text:#e6e9ef; --btn:#5e9bff; --item:#0f1318; }
+    body{ margin:0; background:var(--bg); color:var(--text); font:14px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    .wrap{ max-width:900px; margin:24px auto; padding:0 16px; }
+    h1{ font-size:22px; margin:0 0 12px; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; }
+    label{ display:block; font-size:12px; color:var(--muted); margin:8px 0 6px; }
+    select,button{ width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--border); background:#101114; color:var(--text); outline:none; }
+    select:disabled{ opacity:.6; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr 1fr 120px; gap:10px; }
+    .row{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    .row > *{ flex:1 1 200px; }
+    .btn{ background:var(--btn); color:var(--btn-text); font-weight:600; border:0; cursor:pointer; }
+    .btn.secondary{ background:#20242c; color:var(--text); border:1px solid var(--border); }
+    .status{ margin-top:8px; color:var(--muted); min-height:18px; }
+    .list{ margin-top:14px; display:grid; gap:10px; }
+    .item{ background:var(--item); border:1px solid var(--border); border-radius:12px; padding:12px; }
+    .muted{ color:var(--muted); }
+    .price{ font-weight:700; }
+    .ok{ color:var(--ok); }
+    .err{ color:var(--err); }
+    .footer{ margin:18px 0 32px; color:var(--muted); font-size:12px; text-align:center; }
+    @media (max-width:700px){ .grid{ grid-template-columns:1fr 1fr; } }
+  </style>
+  <!-- Скрипт Telegram WebApp (безопасно подключать всегда) -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>⛽ Fuel Finder</h1>
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label for="country">Страна</label>
+          <select id="country"></select>
+        </div>
+        <div>
+          <label for="city">Город</label>
+          <select id="city">
+            <option value="">Все</option>
+          </select>
+        </div>
+        <div>
+          <label for="fuel">Топливо</label>
+          <select id="fuel">
+            <option>95</option>
+            <option>98</option>
+            <option>diesel</option>
+            <option>lpg</option>
+          </select>
+        </div>
+        <div>
+          <label for="limit">Лимит</label>
+          <select id="limit">
+            <option>10</option>
+            <option selected>20</option>
+            <option>50</option>
+          </select>
+        </div>
       </div>
+      <div class="row">
+        <button id="apply" class="btn">Показать</button>
+        <button id="send" class="btn secondary">Отправить в чат</button>
+      </div>
+      <div id="status" class="status">Готово</div>
     </div>
-    <div style="margin-top:10px"><button id="apply">Показать</button></div>
-    <div class="muted" id="meta"></div>
+
+    <div id="list" class="list"></div>
+
+    <div class="footer">Данные обновляются скрейпером; выбери фильтры и нажми «Показать». Если открыт из Telegram — «Отправить в чат» передаст выбор боту.</div>
   </div>
-  <div class="list" id="list"></div>
-</div>
+
 <script>
-const API_BASE = "https://<invoke-id>.execute-api.eu-north-1.amazonaws.com"; // <-- подставь свой
-const els = {country:country, city:city, fuel:fuel, list:list, meta:meta, apply:apply};
+(() => {
+  // === НАСТРОЙКА API ===
+  const API_BASE = "https://et14k9zlk8.execute-api.eu-north-1.amazonaws.com"; // <-- твой Invoke URL
 
-async function j(url){ const r = await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  // === Telegram WebApp интеграция (не мешает вне Telegram) ===
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready(); tg.expand();
+      // Тема Telegram
+      if (tg.themeParams && tg.colorScheme === 'dark') document.body.classList.add('tg-dark');
+    } catch {}
+  }
 
-async function loadCountries(){
-  const jmeta = await j(`${API_BASE}/meta`);
-  els.country.innerHTML = jmeta.countries.map(c=>`<option>${c}</option>`).join('');
-  await onCountryChange();
-}
-async function onCountryChange(){
-  const c = els.country.value;
-  const jmeta = await j(`${API_BASE}/meta?country=`+encodeURIComponent(c));
-  els.city.innerHTML = `<option value="">Все</option>` + jmeta.cities.map(ci=>`<option>${ci}</option>`).join('');
-}
-country.addEventListener('change', onCountryChange);
+  // === ЭЛЕМЕНТЫ ===
+  const els = {
+    country: document.getElementById('country'),
+    city:    document.getElementById('city'),
+    fuel:    document.getElementById('fuel'),
+    limit:   document.getElementById('limit'),
+    apply:   document.getElementById('apply'),
+    send:    document.getElementById('send'),
+    list:    document.getElementById('list'),
+    status:  document.getElementById('status'),
+  };
 
-async function apply(){
-  const qs = new URLSearchParams({
-    country: els.country.value || '',
-    city: els.city.value || '',
-    fuel: els.fuel.value || '95',
-    limit: 20
-  });
-  const data = await j(`${API_BASE}/search?`+qs.toString());
-  els.meta.textContent = `Найдено: ${data.items.length}`;
-  els.list.innerHTML = data.items.map((it,i)=>`
-    <div class="item">
-      <div><b>${i+1}. ${it.name}</b> — <span class="price">${Number(it.price).toFixed(3)} €/л</span></div>
-      <div class="muted">${[it.country,it.city].filter(Boolean).join(' · ')}</div>
-      <div class="muted">${it.address||''}</div>
-    </div>`).join('') || '<div class="item"><span class="muted">Пусто</span></div>';
-}
-apply.onclick = apply;
+  // === УТИЛИТЫ ===
+  async function fetchJSON(url) {
+    const r = await fetch(url, { mode: 'cors' });
+    if (!r.ok) {
+      let text = await r.text().catch(()=>String(r.status));
+      throw new Error(`${r.status} ${r.statusText}: ${text}`);
+    }
+    return r.json();
+  }
+  function setStatus(msg, cls='') {
+    els.status.textContent = msg;
+    els.status.className = 'status ' + (cls||'');
+  }
+  function saveState(){
+    localStorage.setItem('fuelFinderState', JSON.stringify({
+      c: els.country.value, ci: els.city.value, f: els.fuel.value, l: els.limit.value
+    }));
+  }
+  function restoreState(){
+    try{
+      const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}');
+      if (s.f) els.fuel.value = s.f;
+      if (s.l) els.limit.value = s.l;
+      return s;
+    }catch{ return {}; }
+  }
 
-loadCountries().then(apply);
+  // === ЛОГИКА ===
+  async function loadCountries() {
+    setStatus('Загружаю страны…');
+    els.country.disabled = true;
+    els.country.innerHTML = `<option value="">Загрузка…</option>`;
+    try {
+      const j = await fetchJSON(`${API_BASE}/meta`);
+      const countries = j.countries || [];
+      els.country.innerHTML = countries.map(c => `<option>${c}</option>`).join('');
+      const saved = restoreState();
+      if (saved.c && countries.includes(saved.c)) els.country.value = saved.c;
+      await onCountryChange(saved.ci);
+      setStatus('Готово');
+    } catch (e) {
+      console.error(e);
+      setStatus('Ошибка загрузки стран', 'err');
+      els.country.innerHTML = `<option value="">Ошибка</option>`;
+    } finally {
+      els.country.disabled = false;
+    }
+  }
+
+  async function onCountryChange(prefCity) {
+    const c = els.country.value;
+    setStatus('Загружаю города…');
+    els.city.disabled = true;
+    els.city.innerHTML = `<option value="">Загрузка…</option>`;
+    try {
+      const j = await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`);
+      const cities = (j.cities || []);
+      els.city.innerHTML = `<option value="">Все</option>` + cities.map(ci => `<option>${ci}</option>`).join('');
+      if (prefCity && cities.includes(prefCity)) els.city.value = prefCity;
+      setStatus('Готово');
+    } catch (e) {
+      console.error(e);
+      setStatus('Ошибка загрузки городов', 'err');
+      els.city.innerHTML = `<option value="">Ошибка</option>`;
+    } finally {
+      els.city.disabled = false;
+    }
+  }
+
+  async function applyFilters() {
+    setStatus('Ищу…');
+    els.list.innerHTML = '';
+    const qs = new URLSearchParams({
+      country: els.country.value || '',
+      city:    els.city.value || '',
+      fuel:    els.fuel.value || '95',
+      limit:   els.limit.value || 20,
+    });
+    try {
+      const j = await fetchJSON(`${API_BASE}/search?` + qs.toString());
+      const items = j.items || [];
+      setStatus(`Найдено: ${items.length}`);
+      renderList(items);
+      saveState();
+    } catch (e) {
+      console.error(e);
+      setStatus('Ошибка загрузки результатов', 'err');
+      els.list.innerHTML = `<div class="item"><span class="muted">${String(e).slice(0, 240)}</span></div>`;
+    }
+  }
+
+  function renderList(items) {
+    if (!items.length) {
+      els.list.innerHTML = '<div class="item"><span class="muted">Пусто</span></div>';
+      return;
+    }
+    els.list.innerHTML = items.map((it, i) => {
+      const price = (it.price != null) ? Number(it.price).toFixed(3) : '—';
+      const loc = [it.country, it.city].filter(Boolean).join(' · ');
+      const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
+      const gmaps = `https://maps.google.com/?q=${q}`;
+      return `
+        <div class="item">
+          <div><b>${i+1}. ${it.name}</b> — <span class="price">${price} €/л</span></div>
+          <div class="muted">${loc}</div>
+          <div class="muted">${it.address || ''}</div>
+          <div><a href="${gmaps}" target="_blank" rel="noopener" class="muted">Открыть в картах</a></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function sendToBot() {
+    if (!tg || !tg.sendData) {
+      setStatus('Открой через Telegram, чтобы отправить в чат', 'err');
+      return;
+    }
+    const payload = {
+      country: els.country.value || '',
+      city:    els.city.value || '',
+      fuel:    (els.fuel.value || '95').toLowerCase()
+    };
+    try {
+      tg.sendData(JSON.stringify(payload));
+      setStatus('Отправлено в чат ✔', 'ok');
+    } catch (e) {
+      console.error(e);
+      setStatus('Не удалось отправить в чат', 'err');
+    }
+  }
+
+  // === События ===
+  els.country.addEventListener('change', () => { onCountryChange(''); });
+  els.apply.addEventListener('click', applyFilters);
+  els.send.addEventListener('click', sendToBot);
+
+  // === Старт ===
+  loadCountries().then(applyFilters);
+})();
 </script>
+</body>
+</html>
