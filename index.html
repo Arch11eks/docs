@@ -27,6 +27,7 @@
     .mapish:hover{background:#0f1218}.mapish .pin{font-size:26px;line-height:1}
     .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#0f151d;border:1px solid var(--border);font-size:12px;color:var(--muted)}
     @media (max-width:980px){.grid{grid-template-columns:1fr 1fr 1fr 120px}} @media (max-width:780px){.grid{grid-template-columns:1fr 1fr}}
+    small.hint{display:block;color:var(--muted);margin-top:4px}
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -37,7 +38,11 @@
     <div class="grid">
       <div><label for="country">Страна</label><select id="country"></select></div>
       <div><label for="city">Город</label><select id="city"><option value="">Все</option></select></div>
-      <div><label for="brand">Бренд</label><select id="brand"><option value="">Все</option></select></div>
+      <div>
+        <label for="brand">Бренды</label>
+        <select id="brand" multiple size="4"><!-- multiple! --></select>
+        <small class="hint">Можно выбрать несколько (на телефоне тапай по пунктам)</small>
+      </div>
       <div><label for="fuel">Топливо</label><select id="fuel"><option>95</option><option>98</option><option>diesel</option><option>lpg</option></select></div>
       <div><label for="limit">Лимит</label><select id="limit"><option>10</option><option selected>20</option><option>50</option></select></div>
     </div>
@@ -70,19 +75,46 @@
         first_name:u.first_name||null, last_name:u.last_name||null, lang: tg.initDataUnsafe?.user?.language_code||null }) }); } catch(e){}
   }
 
-  const els = { country:country=document.getElementById('country'), city:document.getElementById('city'),
-    brand:document.getElementById('brand'), fuel:document.getElementById('fuel'), limit:document.getElementById('limit'),
-    apply:document.getElementById('apply'), nearby:document.getElementById('nearby'), send:document.getElementById('send'),
-    mapish:document.getElementById('mapish'), list:document.getElementById('list'), status:document.getElementById('status'),
-    lastGeo:document.getElementById('lastGeoChip') };
+  const els = {
+    country:document.getElementById('country'),
+    city:document.getElementById('city'),
+    brand:document.getElementById('brand'),
+    fuel:document.getElementById('fuel'),
+    limit:document.getElementById('limit'),
+    apply:document.getElementById('apply'),
+    nearby:document.getElementById('nearby'),
+    send:document.getElementById('send'),
+    mapish:document.getElementById('mapish'),
+    list:document.getElementById('list'),
+    status:document.getElementById('status'),
+    lastGeo:document.getElementById('lastGeoChip'),
+  };
 
   async function fetchJSON(url){ const r=await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
   function setStatus(m,c=''){ els.status.textContent=m; els.status.className='status '+(c||''); }
-  function saveState(){ localStorage.setItem('fuelFinderState', JSON.stringify({c:els.country.value,ci:els.city.value,br:els.brand.value,f:els.fuel.value,l:els.limit.value})); }
-  function restoreState(){ try{ return JSON.parse(localStorage.getItem('fuelFinderState')||'{}'); }catch{return{}} }
+
+  function selValues(selectEl){
+    return Array.from(selectEl.selectedOptions).map(o=>o.value).filter(Boolean);
+  }
+
+  function saveState(){
+    localStorage.setItem('fuelFinderState', JSON.stringify({
+      c: els.country.value, ci: els.city.value,
+      brs: selValues(els.brand),
+      f: els.fuel.value, l: els.limit.value
+    }));
+  }
+  function restoreState(){
+    try{ return JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); }catch{ return {}; }
+  }
   function setLastGeo(lat,lon){ if(lat==null||lon==null){els.lastGeo.style.display='none';return;} els.lastGeo.style.display='inline-flex'; els.lastGeo.textContent=`Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
 
-  function fillBrands(brands){ els.brand.innerHTML = '<option value="">Все</option>' + (brands||[]).map(b=>`<option>${b}</option>`).join(''); }
+  function fillBrands(brands, preselect=[]){
+    const set = new Set(preselect||[]);
+    els.brand.innerHTML = (brands||[]).map(b => `<option value="${b}">${b}</option>`).join('');
+    // выставим выбранные
+    Array.from(els.brand.options).forEach(o => { o.selected = set.has(o.value); });
+  }
 
   async function loadCountries(){
     setStatus('Загружаю страны…'); els.country.disabled=true; els.country.innerHTML=`<option>Загрузка…</option>`;
@@ -90,29 +122,30 @@
       const j = await fetchJSON(`${API_BASE}/meta`);
       const countries = j.countries || [];
       els.country.innerHTML = countries.map(c=>`<option>${c}</option>`).join('');
-      fillBrands(j.brands||[]);
-      const saved = restoreState(); if(saved.c && countries.includes(saved.c)) els.country.value=saved.c;
-      await onCountryChange(saved.ci, saved.br); setStatus('Готово');
+      const saved = restoreState();
+      if (saved.c && countries.includes(saved.c)) els.country.value = saved.c;
+      fillBrands(j.brands || [], saved.brs || []);
+      await onCountryChange(saved.ci, saved.brs || []);
+      setStatus('Готово');
     }catch(e){ console.error(e); setStatus('Ошибка загрузки стран','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.country.disabled=false; }
   }
 
-  async function onCountryChange(prefCity, prefBrand){
+  async function onCountryChange(prefCity, prefBrands){
     const c = els.country.value; setStatus('Загружаю города/бренды…'); els.city.disabled=true; els.brand.disabled=true;
     try{
       const j = await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`);
       const cities = j.cities || [];
       els.city.innerHTML = `<option value="">Все</option>` + cities.map(ci=>`<option>${ci}</option>`).join('');
-      fillBrands(j.brands||[]);
-      if(prefCity && cities.includes(prefCity)) els.city.value=prefCity;
-      if(prefBrand && (j.brands||[]).includes(prefBrand)) els.brand.value=prefBrand;
+      if (prefCity && cities.includes(prefCity)) els.city.value = prefCity;
+      fillBrands(j.brands || [], prefBrands || []);
       setStatus('Готово');
-    }catch(e){ console.error(e); setStatus('Ошибка загрузки городов','err'); els.city.innerHTML = `<option>Ошибка</option>`; }
+    }catch(e){ console.error(e); setStatus('Ошибка загрузки городов','err'); els.city.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.city.disabled=false; els.brand.disabled=false; }
   }
 
   function formatFresh(it){
-    if (it.fresh_label) return it.fresh_label; // оригинал с сайта (Šodien/Vakar/…)
+    if (it.fresh_label) return it.fresh_label;
     if (it.fresh_days==null) return '';
     const d = Number(it.fresh_days);
     if (d===0) return 'сегодня'; if (d===1) return 'вчера'; if (d===2) return 'позавчера';
@@ -121,11 +154,20 @@
 
   async function applyFilters(){
     setStatus('Ищу…'); els.list.innerHTML='';
-    const qs = new URLSearchParams({ country:els.country.value||'', city:els.city.value||'', brand:els.brand.value||'', fuel:els.fuel.value||'95', limit:els.limit.value||20 });
+    const brands = selValues(els.brand);
+    const qs = new URLSearchParams({
+      country: els.country.value || '',
+      city:    els.city.value || '',
+      brands:  brands.join(','),
+      fuel:    els.fuel.value || '95',
+      limit:   els.limit.value || 20,
+    });
     try{
       const j = await fetchJSON(`${API_BASE}/search?`+qs.toString());
-      setStatus(`Найдено: ${j.items.length}`); renderList(j.items); saveState();
-    }catch(e){ console.error(e); setStatus('Ошибка загрузки результатов','err'); els.list.innerHTML=`<div class="item"><span class="muted">${String(e).slice(0,240)}</span></div>`; }
+      setStatus(`Найдено: ${j.items.length}`);
+      renderList(j.items);
+      saveState();
+    }catch(e){ console.error(e); setStatus('Ошибка загрузки результатов','err'); els.list.innerHTML = `<div class="item"><span class="muted">${String(e).slice(0,240)}</span></div>`; }
   }
 
   function renderList(items){
@@ -162,30 +204,50 @@
 
   async function findNearby(){
     if(!navigator.geolocation){ setStatus('Геолокация не поддерживается', 'err'); return; }
+    const brands = selValues(els.brand);
     setStatus('Получаю геолокацию…');
     navigator.geolocation.getCurrentPosition(async pos=>{
       const {latitude,longitude}=pos.coords; setStatus('Ищу ближайшие…');
-      const qs = new URLSearchParams({ lat:latitude, lon:longitude, brand:els.brand.value||'', fuel:els.fuel.value||'95', limit:els.limit.value||20 });
-      try{ const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString()); setStatus(`Найдено рядом: ${j.items.length}`);
-           renderListWithDistance(j.items); localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat:latitude,lon:longitude})); setLastGeo(latitude,longitude);
-      }catch(e){ console.error(e); setStatus('Ошибка поиска рядом','err'); }
+      const qs = new URLSearchParams({
+        lat: latitude, lon: longitude,
+        brands: brands.join(','),
+        fuel: els.fuel.value || '95',
+        limit: els.limit.value || 20
+      });
+      try{
+        const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
+        setStatus(`Найдено рядом: ${j.items.length}`);
+        renderListWithDistance(j.items);
+        localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat:latitude, lon:longitude}));
+        setLastGeo(latitude, longitude);
+      }catch(e){
+        console.error(e); setStatus('Ошибка поиска рядом','err');
+      }
     }, err=> setStatus('Не удалось получить геолокацию: '+err.message, 'err'),
        { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
   }
 
   function sendToBot(){
     if(!tg || !tg.sendData){ setStatus('Открой через Telegram, чтобы отправить в чат','err'); return; }
-    const payload = { country:els.country.value||'', city:els.city.value||'', brand:els.brand.value||'', fuel:(els.fuel.value||'95').toLowerCase() };
-    try{ tg.sendData(JSON.stringify(payload)); setStatus('Отправлено в чат ✔','ok'); }catch(e){ setStatus('Не удалось отправить','err'); }
+    const payload = {
+      country: els.country.value || '',
+      city:    els.city.value || '',
+      brands:  selValues(els.brand),
+      fuel:    (els.fuel.value || '95').toLowerCase()
+    };
+    try{ tg.sendData(JSON.stringify(payload)); setStatus('Отправлено в чат ✔','ok'); }
+    catch(e){ setStatus('Не удалось отправить','err'); }
   }
 
-  els.country.addEventListener('change', ()=> onCountryChange('', ''));
+  els.country.addEventListener('change', ()=> onCountryChange('', []));
   els.apply.addEventListener('click', applyFilters);
   els.nearby.addEventListener('click', findNearby);
   els.mapish.addEventListener('click', findNearby);
   els.send.addEventListener('click', sendToBot);
 
-  const saved = restoreState(); if(saved.f) els.fuel.value=saved.f; if(saved.l) els.limit.value=saved.l; if(saved.br) els.brand.value=saved.br;
+  const saved = restoreState();
+  if (saved.f) els.fuel.value = saved.f;
+  if (saved.l) els.limit.value = saved.l;
   try{ const g = JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null&&g.lon!=null) setLastGeo(g.lat,g.lon);}catch{}
   if (tg) { registerFromWebApp(); }
   loadCountries().then(applyFilters);
