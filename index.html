@@ -152,9 +152,10 @@
     }));
   }
   function restoreState(){
-    try{ const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); 
-         if (!s.frs && s.fr) s.frs = [s.fr]; // миграция со старого одиночного значения
-         return s;
+    try{
+      const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}');
+      if (!s.frs && s.fr) s.frs = [s.fr];
+      return s;
     }catch{ return {}; }
   }
   function setLastGeo(lat,lon){
@@ -210,8 +211,7 @@
   function translateFreshLabel(raw){
     if (!raw) return '';
     const n = _norm(raw);
-    if (['sodien','siandien','tana','tana.','sodien.','siandien.'].includes(n)) return 'Сегодня';
-    if (n === 'šodien') return 'Сегодня';
+    if (['sodien','siandien','tana','tana.','sodien.','siandien.','šodien'].includes(n)) return 'Сегодня';
     if (['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
     if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
     if (/\d/.test(raw)) return raw; // даты показываем как есть
@@ -220,8 +220,8 @@
   function classifyFresh(it){
     const raw = (it.fresh_label || '').trim();
     const n = _norm(raw);
-    if (n==='sodien' || n==='siandien' || n==='tana' || n==='šodien') return 'today';
-    if (n==='vakar' || n==='eile') return 'yesterday';
+    if (['sodien','siandien','tana','šodien'].includes(n)) return 'today';
+    if (['vakar','eile'].includes(n)) return 'yesterday';
     if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'daybefore';
     if (it.fresh_days===0) return 'today';
     if (it.fresh_days===1) return 'yesterday';
@@ -242,7 +242,7 @@
       city:    els.city.value || '',
       brands:  brands.join(','),
       fuel:    els.fuel.value || '95',
-      limit:   els.limit.value || 50,   // берём побольше, фильтруем по свежести на клиенте
+      limit:   els.limit.value || 50,   // берём побольше, фильтруем свежесть на клиенте
     });
     try{
       const j = await fetchJSON(`${API_BASE}/search?`+qs.toString());
@@ -290,7 +290,13 @@
       const price = it.price!=null ? Number(it.price).toFixed(3) : '—';
       const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} д назад`) : '');
       const upd = freshTxt ? ` · обновлено: ${freshTxt}` : '';
-      const head = [it.brand, it.country, it.city].filter(Boolean).join(' · ') + upd + (it.distance_km!=null?` · ${Number(it.distance_km).toFixed(1)} км`:``);
+
+      const straight = (it.distance_km!=null) ? ` · по прямой: ${Number(it.distance_km).toFixed(1)} км` : '';
+      const road = (it.drive_distance_km!=null || it.drive_duration_min!=null)
+        ? ` · по дороге: ${it.drive_distance_km!=null?Number(it.drive_distance_km).toFixed(1)+' км':'—'}${it.drive_duration_min!=null?', '+Number(it.drive_duration_min).toFixed(0)+' мин':''}`
+        : '';
+
+      const head = [it.brand, it.country, it.city].filter(Boolean).join(' · ') + upd + straight + road;
 
       const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
       const gmaps = `https://maps.google.com/?q=${q}`;
@@ -320,7 +326,8 @@
         lat: latitude, lon: longitude,
         brands: brands.join(','),
         fuel: els.fuel.value || '95',
-        limit: els.limit.value || 50
+        limit: els.limit.value || 50,
+        routing: 'drive'  // считаем по дороге
       });
       try{
         const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
@@ -343,7 +350,7 @@
       city:    els.city.value || '',
       brands:  selValues(els.brand),
       fuel:    (els.fuel.value || '95').toLowerCase(),
-      fresh:   selValues(els.fresh)     // массив кодов: today/yesterday/daybefore/other
+      fresh:   selValues(els.fresh)     // массив кодов
     };
     try{ tg.sendData(JSON.stringify(payload)); setStatus('Отправлено в чат ✔','ok'); }
     catch(e){ setStatus('Не удалось отправить','err'); }
