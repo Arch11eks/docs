@@ -3,99 +3,168 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Fuel Finder — ближайшие и дешёвые АЗС</title>
+  <title>Fuel Finder — АЗС и My Car</title>
   <style>
     :root{ --bg:#0f0f10; --card:#15161a; --border:#26282d; --muted:#9aa0a6; --text:#e9eaee;
-           --btn:#1a73e8; --btn-text:#fff; --item:#121317; --ok:#22c55e; --err:#ef4444; --accent:#4da3ff; --nearby:#10b981; }
-    body.tg-dark{ --bg:#0b0e11; --card:#111418; --border:#1e2228; --muted:#8f98a3; --text:#e6e9ef; --item:#0f1318; --btn:#5e9bff; --nearby:#16a34a; }
+           --btn:#1a73e8; --btn-text:#fff; --item:#121317; --ok:#22c55e; --err:#ef4444; --accent:#4da3ff; --nearby:#10b981; --tab:#0e1014 }
+    body.tg-dark{ --bg:#0b0e11; --card:#111418; --border:#1e2228; --muted:#8f98a3; --text:#e6e9ef; --item:#0f1318; --btn:#5e9bff; --nearby:#16a34a; --tab:#0b0d12 }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",Arial}
     a{color:var(--accent);text-decoration:none}
-    .wrap{max-width:960px;margin:24px auto;padding:0 16px}
     h1{font-size:22px;margin:0 0 12px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}
     label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
-    select,button{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:#101114;color:var(--text)}
-    select:disabled{opacity:.6}
-    /* 6 колонок: страна, город, бренды, топливо, обновление, лимит */
-    .grid{display:grid;grid-template-columns:repeat(5,1fr) 120px;gap:10px}
-    .row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}.row>*{flex:1 1 220px}
+    select,button,input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:#101114;color:var(--text)}
+    select:disabled,input:disabled{opacity:.6}
+    small.hint{display:block;color:var(--muted);margin-top:4px}
+    .wrap{max-width:960px;margin:24px auto;padding:0 16px 80px} /* снизу запас под таббар */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}
+    .grid{display:grid;gap:10px}
+    .row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    .row>*{flex:1 1 220px}
     .btn{background:var(--btn);color:var(--btn-text);font-weight:600;border:0;cursor:pointer;transition:filter .15s}
     .btn.secondary{background:#20242c;color:var(--text);border:1px solid var(--border)}
     .btn.nearby{background:var(--nearby)}
+    .btn.linklike{background:transparent;border:0;color:var(--accent);padding:0}
     .btn:hover{filter:brightness(1.05)}
     .status{margin-top:8px;color:var(--muted);min-height:18px}
     .list{margin-top:14px;display:grid;gap:10px}
     .item{background:var(--item);border:1px solid var(--border);border-radius:12px;padding:12px}
     .muted{color:var(--muted)} .price{font-weight:700}
-    .footer{margin:18px 0 32px;color:var(--muted);font-size:12px;text-align:center}
-    .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#0f151d;border:1px solid var(--border);font-size:12px;color:var(--muted)}
-    small.hint{display:block;color:var(--muted);margin-top:4px}
-    @media (max-width:1100px){.grid{grid-template-columns:1fr 1fr 1fr 1fr 1fr}}
-    @media (max-width:900px){.grid{grid-template-columns:1fr 1fr 1fr}}
-    @media (max-width:600px){.grid{grid-template-columns:1fr 1fr}}
+    .footer{margin:18px 0 120px;color:var(--muted);font-size:12px;text-align:center}
+
+    /* таббар снизу */
+    .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--tab);border-top:1px solid var(--border);display:flex}
+    .tabbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;color:var(--muted);cursor:pointer;user-select:none}
+    .tabbtn.active{color:var(--text);font-weight:600}
+    .tabbtn .ico{font-size:18px}
+    .screen{display:none} .screen.active{display:block}
+
+    /* гриды */
+    .grid.stations{grid-template-columns:repeat(5,1fr) 120px}
+    @media (max-width:1100px){.grid.stations{grid-template-columns:1fr 1fr 1fr 1fr 1fr}}
+    @media (max-width:900px){.grid.stations{grid-template-columns:1fr 1fr 1fr}}
+    @media (max-width:600px){.grid.stations{grid-template-columns:1fr 1fr}}
+
+    .grid.car{grid-template-columns:1fr 1fr}
+    @media (max-width:800px){.grid.car{grid-template-columns:1fr}}
+
+    .discounts{display:grid;gap:8px}
+    .disc-row{display:grid;grid-template-columns:1fr 140px 40px;gap:8px}
+    .disc-row button{width:40px;padding:0}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:#0f151d;color:var(--muted);font-size:12px}
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <h1>⛽ Fuel Finder</h1>
+  <div id="screen-stations" class="screen active">
+    <h1>⛽ Станции</h1>
+    <div class="card">
+      <div class="grid stations">
+        <div><label for="country">Страна</label><select id="country"></select></div>
+        <div><label for="city">Город</label><select id="city"><option value="">Все</option></select></div>
+        <div>
+          <label for="brand">Бренды</label>
+          <select id="brand" multiple size="4"></select>
+          <small class="hint">Можно выбрать несколько</small>
+        </div>
+        <div>
+          <label for="fuel">Топливо</label>
+          <select id="fuel"><option>95</option><option>98</option><option>diesel</option><option>lpg</option></select>
+        </div>
+        <div>
+          <label for="fresh">Обновление</label>
+          <select id="fresh" multiple size="4">
+            <option value="today">Сегодня</option>
+            <option value="yesterday">Вчера</option>
+            <option value="daybefore">Позавчера</option>
+            <option value="other">Другое</option>
+          </select>
+          <small class="hint">Можно выбрать несколько</small>
+        </div>
+        <div><label for="limit">Лимит</label><select id="limit"><option>10</option><option selected>20</option><option>50</option></select></div>
+      </div>
 
-  <div class="card">
-    <div class="grid">
-      <div>
-        <label for="country">Страна</label>
-        <select id="country"></select>
+      <div class="row">
+        <button id="apply" class="btn">Показать</button>
+        <button id="nearby" class="btn nearby">📍 Найти рядом</button>
+        <button id="send" class="btn secondary">Отправить в чат</button>
       </div>
-      <div>
-        <label for="city">Город</label>
-        <select id="city"><option value="">Все</option></select>
+
+      <div class="row" id="geoRow" style="display:none">
+        <div class="pill" id="lastGeoChip"></div>
       </div>
-      <div>
-        <label for="brand">Бренды</label>
-        <select id="brand" multiple size="4"></select>
-        <small class="hint">Можно выбрать несколько (на телефоне — по пунктам)</small>
-      </div>
-      <div>
-        <label for="fuel">Топливо</label>
-        <select id="fuel">
-          <option>95</option><option>98</option><option>diesel</option><option>lpg</option>
-        </select>
-      </div>
-      <div>
-        <label for="fresh">Обновление</label>
-        <select id="fresh" multiple size="4">
-          <option value="today">Сегодня</option>
-          <option value="yesterday">Вчера</option>
-          <option value="daybefore">Позавчера</option>
-          <option value="other">Другое</option>
-        </select>
-        <small class="hint">Можно выбрать несколько (напр. Сегодня + Вчера)</small>
-      </div>
-      <div>
-        <label for="limit">Лимит</label>
-        <select id="limit"><option>10</option><option selected>20</option><option>50</option></select>
-      </div>
+
+      <div id="status" class="status">Готово</div>
     </div>
 
-    <div class="row">
-      <button id="apply" class="btn">Показать</button>
-      <button id="nearby" class="btn nearby">📍 Найти рядом</button>
-      <button id="send" class="btn secondary">Отправить в чат</button>
-    </div>
-
-    <div class="row" id="geoRow" style="display:none">
-      <div class="chip" id="lastGeoChip"></div>
-    </div>
-
-    <div id="status" class="status">Готово</div>
+    <div id="list" class="list"></div>
+    <div class="footer">Данные с сайта. В Telegram кнопка «Отправить в чат» передаст выбранные фильтры боту.</div>
   </div>
 
-  <div id="list" class="list"></div>
+  <div id="screen-car" class="screen">
+    <h1>🚘 My Car</h1>
+    <div class="card">
+      <div class="grid car">
+        <div>
+          <label for="car_fuel_type">Тип топлива</label>
+          <select id="car_fuel_type">
+            <option>95</option><option>98</option><option>diesel</option><option>lpg</option>
+          </select>
+        </div>
+        <div>
+          <label for="car_consumption">Расход (л/100 км)</label>
+          <input id="car_consumption" type="number" step="0.1" min="1" placeholder="например, 7.5">
+        </div>
+        <div>
+          <label for="car_tank">Объём бака (л)</label>
+          <input id="car_tank" type="number" step="1" min="1" placeholder="например, 50">
+        </div>
+        <div>
+          <label for="car_current">Сейчас в баке (л)</label>
+          <input id="car_current" type="number" step="1" min="0" placeholder="например, 15">
+          <small class="hint">Нужно для оценки достижимости и выгодности объезда</small>
+        </div>
+        <div>
+          <label for="car_time_value">Цена времени (€/час)</label>
+          <input id="car_time_value" type="number" step="1" min="0" placeholder="0 = не учитывать">
+        </div>
+        <div>
+          <label for="car_detour">Макс. объезд (мин)</label>
+          <input id="car_detour" type="number" step="1" min="0" placeholder="например, 10">
+        </div>
+      </div>
 
-  <div class="footer">
-    Данные с сайта. В Telegram кнопка «Отправить в чат» передаст выбранные фильтры боту.
+      <div style="margin-top:14px">
+        <label for="car_pref_brands">Предпочтительные бренды</label>
+        <select id="car_pref_brands" multiple size="6" style="height:140px"></select>
+        <small class="hint">Используются как дефолт для фильтра «Бренды»</small>
+      </div>
+
+      <div style="margin-top:14px">
+        <label>Скидки по брендам (€/л)</label>
+        <div id="discList" class="discounts"></div>
+        <div class="row" style="margin-top:8px">
+          <button id="discAdd" class="btn secondary" style="max-width:220px">+ Добавить скидку</button>
+          <div class="muted" style="align-self:center">Скидка в евро за литр (например, 0.04 = 4 цента)</div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:16px">
+        <button id="carSave" class="btn">Сохранить</button>
+        <button id="carApplyToFilters" class="btn secondary">Применить к фильтрам</button>
+        <button id="carReset" class="btn linklike">Сбросить</button>
+      </div>
+
+      <div id="carStatus" class="status">Заполни и нажми «Сохранить»</div>
+    </div>
   </div>
+</div>
+
+<!-- таббар -->
+<div class="tabbar">
+  <div id="tabStations" class="tabbtn active"><div class="ico">⛽</div><div>Станции</div></div>
+  <div id="tabCar" class="tabbtn"><div class="ico">🚘</div><div>My Car</div></div>
 </div>
 
 <script>
@@ -104,6 +173,7 @@
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme === 'dark') document.body.classList.add('tg-dark'); } catch {} }
 
+  // ===== регистрация пользователя (как раньше) =====
   async function registerFromWebApp(){
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
     const u = tg.initDataUnsafe.user;
@@ -122,72 +192,76 @@
     } catch(e) {}
   }
 
+  // ===== элементы =====
   const els = {
-    country:document.getElementById('country'),
-    city:document.getElementById('city'),
-    brand:document.getElementById('brand'),
-    fuel:document.getElementById('fuel'),
-    fresh:document.getElementById('fresh'),
-    limit:document.getElementById('limit'),
-    apply:document.getElementById('apply'),
-    nearby:document.getElementById('nearby'),
-    send:document.getElementById('send'),
-    list:document.getElementById('list'),
-    status:document.getElementById('status'),
-    lastGeo:document.getElementById('lastGeoChip'),
-    geoRow:document.getElementById('geoRow'),
+    // stations
+    country:$('#country'), city:$('#city'), brand:$('#brand'), fuel:$('#fuel'),
+    fresh:$('#fresh'), limit:$('#limit'), apply:$('#apply'), nearby:$('#nearby'),
+    send:$('#send'), list:$('#list'), status:$('#status'), lastGeo:$('#lastGeoChip'),
+    geoRow:$('#geoRow'),
+    // car
+    carFuel:$('#car_fuel_type'), carCons:$('#car_consumption'), carTank:$('#car_tank'),
+    carCurrent:$('#car_current'), carTimeVal:$('#car_time_value'), carDetour:$('#car_detour'),
+    carPrefBrands:$('#car_pref_brands'), discList:$('#discList'), discAdd:$('#discAdd'),
+    carSave:$('#carSave'), carApplyToFilters:$('#carApplyToFilters'), carReset:$('#carReset'),
+    carStatus:$('#carStatus'),
+    // tabs
+    screenStations:$('#screen-stations'), screenCar:$('#screen-car'),
+    tabStations:$('#tabStations'), tabCar:$('#tabCar'),
   };
 
+  function $(id){ return document.getElementById(id.replace(/^#/,'')); }
+
+  // ===== utils =====
   async function fetchJSON(url){ const r=await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
   function setStatus(m,c=''){ els.status.textContent=m; els.status.className='status '+(c||''); }
-
+  function setCarStatus(m,c=''){ els.carStatus.textContent=m; els.carStatus.className='status '+(c||''); }
   function selValues(selectEl){ return Array.from(selectEl.selectedOptions).map(o=>o.value).filter(Boolean); }
+  function setOptions(selectEl, options){
+    selectEl.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
+  }
+  function preselect(selectEl, values){ const set=new Set(values||[]); Array.from(selectEl.options).forEach(o=>o.selected=set.has(o.value)); }
+  function setLastGeo(lat,lon){ if(lat==null||lon==null){ els.geoRow.style.display='none'; return;} els.geoRow.style.display='flex'; els.lastGeo.textContent=`Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
 
+  // ===== сохранение состояний =====
   function saveState(){
     localStorage.setItem('fuelFinderState', JSON.stringify({
-      c: els.country.value, ci: els.city.value,
-      brs: selValues(els.brand),
-      f: els.fuel.value, l: els.limit.value,
-      frs: selValues(els.fresh)
+      c: els.country.value, ci: els.city.value, brs: selValues(els.brand),
+      f: els.fuel.value, l: els.limit.value, frs: selValues(els.fresh)
     }));
   }
   function restoreState(){
-    try{
-      const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}');
-      if (!s.frs && s.fr) s.frs = [s.fr];
-      return s;
-    }catch{ return {}; }
+    try{ const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); if(!s.frs && s.fr) s.frs=[s.fr]; return s; }catch{ return {}; }
   }
-  function setLastGeo(lat,lon){
-    if(lat==null||lon==null){ els.geoRow.style.display='none'; return; }
-    els.geoRow.style.display='flex';
-    els.lastGeo.textContent=`Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-  }
+  function saveMyCar(mc){ localStorage.setItem('fuelMyCar', JSON.stringify(mc)); }
+  function loadMyCar(){ try{ return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); }catch{return {};} }
 
-  function fillBrands(brands, preselect=[]){
-    const set = new Set(preselect||[]);
-    els.brand.innerHTML = (brands||[]).map(b => `<option value="${b}">${b}</option>`).join('');
-    Array.from(els.brand.options).forEach(o => { o.selected = set.has(o.value); });
-  }
-  function preselectFresh(values=[]){
-    const set = new Set(values||[]);
-    Array.from(els.fresh.options).forEach(o => { o.selected = set.has(o.value); });
-  }
-
+  // ===== meta =====
+  let ALL_BRANDS = [];
   async function loadCountries(){
     setStatus('Загружаю страны…'); els.country.disabled=true; els.country.innerHTML=`<option>Загрузка…</option>`;
     try{
       const j = await fetchJSON(`${API_BASE}/meta`);
       const countries = j.countries || [];
-      els.country.innerHTML = countries.map(c=>`<option>${c}</option>`).join('');
+      ALL_BRANDS = j.brands || [];
+      setOptions(els.country, countries);
+      // заполнить бренды: stations-вид
+      fillBrands(ALL_BRANDS, restoreState().brs||[]);
+      // заполнить бренды: my car (pref/discounts)
+      setOptions(els.carPrefBrands, ALL_BRANDS);
+      preselect(els.carPrefBrands, loadMyCar().preferred_brands || []);
+
       const saved = restoreState();
       if (saved.c && countries.includes(saved.c)) els.country.value = saved.c;
-      fillBrands(j.brands || [], saved.brs || []);
-      preselectFresh(saved.frs || []);
       await onCountryChange(saved.ci, saved.brs || []);
+      preselect(els.fresh, saved.frs || []);
       setStatus('Готово');
     }catch(e){ console.error(e); setStatus('Ошибка загрузки стран','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.country.disabled=false; }
+  }
+  function fillBrands(brands, preselectVals){
+    els.brand.innerHTML = (brands||[]).map(b => `<option value="${b}">${b}</option>`).join('');
+    preselect(els.brand, preselectVals||[]);
   }
 
   async function onCountryChange(prefCity, prefBrands){
@@ -197,29 +271,27 @@
       const cities = j.cities || [];
       els.city.innerHTML = `<option value="">Все</option>` + cities.map(ci=>`<option>${ci}</option>`).join('');
       if (prefCity && cities.includes(prefCity)) els.city.value = prefCity;
-      fillBrands(j.brands || [], prefBrands || []);
+      // бренды по стране (если нужны строго страновые):
+      // fillBrands(j.brands || ALL_BRANDS, prefBrands || []);
+      // оставим общий список, чтобы предпочтения не сбрасывались
       setStatus('Готово');
     }catch(e){ console.error(e); setStatus('Ошибка загрузки городов','err'); els.city.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.city.disabled=false; els.brand.disabled=false; }
   }
 
-  // ===== Свежесть: перевод и классификация =====
-  function _norm(s){
-    if (!s) return '';
-    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
-  }
+  // ===== перевод свежести =====
+  function _norm(s){ if(!s) return ''; return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
   function translateFreshLabel(raw){
     if (!raw) return '';
-    const n = _norm(raw);
+    const n=_norm(raw);
     if (['sodien','siandien','tana','tana.','sodien.','siandien.','šodien'].includes(n)) return 'Сегодня';
     if (['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
     if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
-    if (/\d/.test(raw)) return raw; // даты показываем как есть
+    if (/\d/.test(raw)) return raw;
     return raw;
   }
   function classifyFresh(it){
-    const raw = (it.fresh_label || '').trim();
-    const n = _norm(raw);
+    const raw=(it.fresh_label||'').trim(), n=_norm(raw);
     if (['sodien','siandien','tana','šodien'].includes(n)) return 'today';
     if (['vakar','eile'].includes(n)) return 'yesterday';
     if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'daybefore';
@@ -233,16 +305,15 @@
     return wantArr.includes(classifyFresh(it));
   }
 
+  // ===== Stations: поиск =====
   async function applyFilters(){
     setStatus('Ищу…'); els.list.innerHTML='';
     const brands = selValues(els.brand);
     const wantFresh = selValues(els.fresh);
     const qs = new URLSearchParams({
-      country: els.country.value || '',
-      city:    els.city.value || '',
-      brands:  brands.join(','),
-      fuel:    els.fuel.value || '95',
-      limit:   els.limit.value || 50,   // берём побольше, фильтруем свежесть на клиенте
+      country: els.country.value || '', city: els.city.value || '',
+      brands: brands.join(','), fuel: els.fuel.value || '95',
+      limit: els.limit.value || 50,
     });
     try{
       const j = await fetchJSON(`${API_BASE}/search?`+qs.toString());
@@ -284,6 +355,30 @@
     }).join('');
   }
 
+  async function findNearby(){
+    if(!navigator.geolocation){ setStatus('Геолокация не поддерживается', 'err'); return; }
+    const brands = selValues(els.brand);
+    const wantFresh = selValues(els.fresh);
+    setStatus('Получаю геолокацию…');
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const {latitude,longitude}=pos.coords; setStatus('Ищу ближайшие…');
+      const qs = new URLSearchParams({
+        lat: latitude, lon: longitude,
+        brands: brands.join(','), fuel: els.fuel.value || '95',
+        limit: els.limit.value || 50, routing: 'drive'
+      });
+      try{
+        const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
+        const items = (j.items||[]).filter(it => passesFreshFilter(it, wantFresh));
+        setStatus(`Найдено рядом: ${items.length}`);
+        renderListWithDistance(items);
+        localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat:latitude, lon:longitude}));
+        setLastGeo(latitude, longitude);
+      }catch(e){ console.error(e); setStatus('Ошибка поиска рядом','err'); }
+    }, err=> setStatus('Не удалось получить геолокацию: '+err.message, 'err'),
+       { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+  }
+
   function renderListWithDistance(items){
     if(!items.length){ els.list.innerHTML='<div class="item"><span class="muted">Пусто</span></div>'; return;}
     els.list.innerHTML = items.map((it,i)=>{
@@ -295,7 +390,6 @@
       const road = (it.drive_distance_km!=null || it.drive_duration_min!=null)
         ? ` · по дороге: ${it.drive_distance_km!=null?Number(it.drive_distance_km).toFixed(1)+' км':'—'}${it.drive_duration_min!=null?', '+Number(it.drive_duration_min).toFixed(0)+' мин':''}`
         : '';
-
       const head = [it.brand, it.country, it.city].filter(Boolean).join(' · ') + upd + straight + road;
 
       const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
@@ -315,59 +409,138 @@
     }).join('');
   }
 
-  async function findNearby(){
-    if(!navigator.geolocation){ setStatus('Геолокация не поддерживается', 'err'); return; }
-    const brands = selValues(els.brand);
-    const wantFresh = selValues(els.fresh);
-    setStatus('Получаю геолокацию…');
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      const {latitude,longitude}=pos.coords; setStatus('Ищу ближайшие…');
-      const qs = new URLSearchParams({
-        lat: latitude, lon: longitude,
-        brands: brands.join(','),
-        fuel: els.fuel.value || '95',
-        limit: els.limit.value || 50,
-        routing: 'drive'  // считаем по дороге
-      });
-      try{
-        const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
-        const items = (j.items||[]).filter(it => passesFreshFilter(it, wantFresh));
-        setStatus(`Найдено рядом: ${items.length}`);
-        renderListWithDistance(items);
-        localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat:latitude, lon:longitude}));
-        setLastGeo(latitude, longitude);
-      }catch(e){
-        console.error(e); setStatus('Ошибка поиска рядом','err');
-      }
-    }, err=> setStatus('Не удалось получить геолокацию: '+err.message, 'err'),
-       { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
-  }
-
   function sendToBot(){
     if(!tg || !tg.sendData){ setStatus('Открой через Telegram, чтобы отправить в чат','err'); return; }
     const payload = {
-      country: els.country.value || '',
-      city:    els.city.value || '',
-      brands:  selValues(els.brand),
-      fuel:    (els.fuel.value || '95').toLowerCase(),
-      fresh:   selValues(els.fresh)     // массив кодов
+      country: els.country.value || '', city: els.city.value || '',
+      brands: selValues(els.brand), fuel: (els.fuel.value || '95').toLowerCase(),
+      fresh: selValues(els.fresh) // массив: today/yesterday/daybefore/other
     };
     try{ tg.sendData(JSON.stringify(payload)); setStatus('Отправлено в чат ✔','ok'); }
     catch(e){ setStatus('Не удалось отправить','err'); }
   }
 
+  // ===== My Car: UI скидок =====
+  function makeDiscRow(brand='', off=''){
+    const row = document.createElement('div');
+    row.className = 'disc-row';
+    const sel = document.createElement('select'); sel.innerHTML = (ALL_BRANDS||[]).map(b=>`<option>${b}</option>`).join('');
+    if (brand) sel.value = brand;
+    const inp = document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.min='0'; inp.placeholder='0.04';
+    if (off!=='' && off!=null) inp.value = off;
+    const del = document.createElement('button'); del.className='btn secondary'; del.textContent='✕'; del.title='Удалить';
+    del.onclick = () => row.remove();
+    row.appendChild(sel); row.appendChild(inp); row.appendChild(del);
+    return row;
+  }
+  function loadDiscounts(listEl, discounts){
+    listEl.innerHTML='';
+    (discounts||[]).forEach(d => listEl.appendChild(makeDiscRow(d.brand, d.off_eur_per_l)));
+    if (!discounts || discounts.length===0) listEl.appendChild(makeDiscRow());
+  }
+  function collectDiscounts(listEl){
+    const out=[]; listEl.querySelectorAll('.disc-row').forEach(r=>{
+      const brand = r.querySelector('select')?.value || '';
+      const off = parseFloat(r.querySelector('input')?.value);
+      if (brand && !isNaN(off) && off>0) out.push({brand, off_eur_per_l: +off});
+    });
+    return out;
+  }
+
+  // ===== My Car: сохранение/применение =====
+  function readMyCarFromUI(){
+    return {
+      fuel_type: els.carFuel.value || '95',
+      consumption_l_per_100: +els.carCons.value || null,
+      tank_capacity_l: +els.carTank.value || null,
+      current_level_l: +els.carCurrent.value || null,
+      time_value_eur_per_hour: +els.carTimeVal.value || 0,
+      max_detour_min: +els.carDetour.value || 0,
+      preferred_brands: selValues(els.carPrefBrands),
+      discounts: collectDiscounts(els.discList)
+    };
+  }
+  function writeMyCarToUI(mc){
+    if (!mc) return;
+    if (mc.fuel_type) els.carFuel.value = mc.fuel_type;
+    if (mc.consumption_l_per_100!=null) els.carCons.value = mc.consumption_l_per_100;
+    if (mc.tank_capacity_l!=null) els.carTank.value = mc.tank_capacity_l;
+    if (mc.current_level_l!=null) els.carCurrent.value = mc.current_level_l;
+    if (mc.time_value_eur_per_hour!=null) els.carTimeVal.value = mc.time_value_eur_per_hour;
+    if (mc.max_detour_min!=null) els.carDetour.value = mc.max_detour_min;
+    preselect(els.carPrefBrands, mc.preferred_brands || []);
+    loadDiscounts(els.discList, mc.discounts || []);
+  }
+  function applyMyCarToFilters(mc){
+    if (!mc) mc = loadMyCar();
+    if (mc.fuel_type){ els.fuel.value = mc.fuel_type; }
+    if (mc.preferred_brands && mc.preferred_brands.length){
+      preselect(els.brand, mc.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
+    }
+    saveState();
+  }
+
+  // ===== Tabs =====
+  function switchTab(name){
+    const isStations = (name === 'stations');
+    els.screenStations.classList.toggle('active', isStations);
+    els.screenCar.classList.toggle('active', !isStations);
+    els.tabStations.classList.toggle('active', isStations);
+    els.tabCar.classList.toggle('active', !isStations);
+  }
+  els.tabStations.addEventListener('click', ()=> switchTab('stations'));
+  els.tabCar.addEventListener('click', ()=> switchTab('car'));
+
+  // ===== Слушатели =====
   els.country.addEventListener('change', ()=> onCountryChange('', []));
   els.apply.addEventListener('click', applyFilters);
   els.nearby.addEventListener('click', findNearby);
   els.send.addEventListener('click', sendToBot);
 
+  els.discAdd.addEventListener('click', ()=> els.discList.appendChild(makeDiscRow()));
+  els.carSave.addEventListener('click', ()=>{
+    const mc = readMyCarFromUI();
+    saveMyCar(mc);
+    setCarStatus('Сохранено ✔', 'ok');
+  });
+  els.carApplyToFilters.addEventListener('click', ()=>{
+    applyMyCarToFilters();
+    setCarStatus('Применено к фильтрам ✔', 'ok');
+    switchTab('stations');
+    applyFilters();
+  });
+  els.carReset.addEventListener('click', ()=>{
+    localStorage.removeItem('fuelMyCar');
+    writeMyCarToUI({});
+    setCarStatus('Профиль очищен', 'ok');
+  });
+
+  // ===== init =====
   const saved = restoreState();
   if (saved.f) els.fuel.value = saved.f;
   if (saved.l) els.limit.value = saved.l;
-  preselectFresh(saved.frs || []);
+
+  const mcSaved = loadMyCar();
+  writeMyCarToUI(mcSaved); // UI полей (бренды заполним после meta)
+  if (mcSaved.fuel_type) els.fuel.value = mcSaved.fuel_type;
+
   try{ const g = JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null&&g.lon!=null) setLastGeo(g.lat,g.lon);}catch{}
   if (tg) { registerFromWebApp(); }
-  loadCountries().then(applyFilters);
+  loadCountries().then(()=> { // после meta у нас есть ALL_BRANDS
+    // обновим preferred brands и скидки брендов на основе сохранённого профиля
+    setOptions(els.carPrefBrands, ALL_BRANDS);
+    preselect(els.carPrefBrands, mcSaved.preferred_brands || []);
+    // перерасставим скидочные строки с валидными брендами
+    loadDiscounts(els.discList, mcSaved.discounts || []);
+    // если в профиле есть бренды — применим их к фильтрам по умолчанию
+    if (mcSaved.preferred_brands && mcSaved.preferred_brands.length){
+      preselect(els.brand, mcSaved.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
+    } else if (saved.brs) {
+      preselect(els.brand, saved.brs);
+    }
+    preselect(els.fresh, saved.frs || []);
+    applyFilters();
+  });
 })();
 </script>
 </body>
