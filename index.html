@@ -64,13 +64,13 @@
       </div>
       <div>
         <label for="fresh">Обновление</label>
-        <select id="fresh">
-          <option value="">Любое</option>
+        <select id="fresh" multiple size="4">
           <option value="today">Сегодня</option>
           <option value="yesterday">Вчера</option>
           <option value="daybefore">Позавчера</option>
           <option value="other">Другое</option>
         </select>
+        <small class="hint">Можно выбрать несколько (напр. Сегодня + Вчера)</small>
       </div>
       <div>
         <label for="limit">Лимит</label>
@@ -148,11 +148,14 @@
       c: els.country.value, ci: els.city.value,
       brs: selValues(els.brand),
       f: els.fuel.value, l: els.limit.value,
-      fr: els.fresh.value
+      frs: selValues(els.fresh)
     }));
   }
   function restoreState(){
-    try{ return JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); }catch{ return {}; }
+    try{ const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); 
+         if (!s.frs && s.fr) s.frs = [s.fr]; // миграция со старого одиночного значения
+         return s;
+    }catch{ return {}; }
   }
   function setLastGeo(lat,lon){
     if(lat==null||lon==null){ els.geoRow.style.display='none'; return; }
@@ -165,6 +168,10 @@
     els.brand.innerHTML = (brands||[]).map(b => `<option value="${b}">${b}</option>`).join('');
     Array.from(els.brand.options).forEach(o => { o.selected = set.has(o.value); });
   }
+  function preselectFresh(values=[]){
+    const set = new Set(values||[]);
+    Array.from(els.fresh.options).forEach(o => { o.selected = set.has(o.value); });
+  }
 
   async function loadCountries(){
     setStatus('Загружаю страны…'); els.country.disabled=true; els.country.innerHTML=`<option>Загрузка…</option>`;
@@ -175,7 +182,7 @@
       const saved = restoreState();
       if (saved.c && countries.includes(saved.c)) els.country.value = saved.c;
       fillBrands(j.brands || [], saved.brs || []);
-      if (saved.fr) els.fresh.value = saved.fr;
+      preselectFresh(saved.frs || []);
       await onCountryChange(saved.ci, saved.brs || []);
       setStatus('Готово');
     }catch(e){ console.error(e); setStatus('Ошибка загрузки стран','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
@@ -198,25 +205,19 @@
   // ===== Свежесть: перевод и классификация =====
   function _norm(s){
     if (!s) return '';
-    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); // убрать диакритику
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
   }
   function translateFreshLabel(raw){
     if (!raw) return '';
     const n = _norm(raw);
-    // сегодня
-    if (['sodien','siandien','tana','tana.','tanā','sodien.','siandien.'].includes(n)) return 'Сегодня';
-    if (n === 'šodien') return 'Сегодня'; // на случай без нормализации
-    // вчера
+    if (['sodien','siandien','tana','tana.','sodien.','siandien.'].includes(n)) return 'Сегодня';
+    if (n === 'šodien') return 'Сегодня';
     if (['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
-    // позавчера
     if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
-    // если это дата/числа — показываем как есть
-    if (/\d/.test(raw)) return raw;
-    // остальное — показываем как есть
+    if (/\d/.test(raw)) return raw; // даты показываем как есть
     return raw;
   }
   function classifyFresh(it){
-    // приоритет: fresh_label → fresh_days
     const raw = (it.fresh_label || '').trim();
     const n = _norm(raw);
     if (n==='sodien' || n==='siandien' || n==='tana' || n==='šodien') return 'today';
@@ -225,24 +226,23 @@
     if (it.fresh_days===0) return 'today';
     if (it.fresh_days===1) return 'yesterday';
     if (it.fresh_days===2) return 'daybefore';
-    // есть цифры/дата или что-то иное → other
     return 'other';
   }
-  function passesFreshFilter(it, want){
-    if (!want) return true;
-    return classifyFresh(it) === want;
+  function passesFreshFilter(it, wantArr){
+    if (!wantArr || wantArr.length===0) return true;
+    return wantArr.includes(classifyFresh(it));
   }
 
   async function applyFilters(){
     setStatus('Ищу…'); els.list.innerHTML='';
     const brands = selValues(els.brand);
-    const wantFresh = els.fresh.value || '';
+    const wantFresh = selValues(els.fresh);
     const qs = new URLSearchParams({
       country: els.country.value || '',
       city:    els.city.value || '',
       brands:  brands.join(','),
       fuel:    els.fuel.value || '95',
-      limit:   els.limit.value || 50,   // беру побольше, т.к. фильтруем по свежести на клиенте
+      limit:   els.limit.value || 50,   // берём побольше, фильтруем по свежести на клиенте
     });
     try{
       const j = await fetchJSON(`${API_BASE}/search?`+qs.toString());
@@ -312,7 +312,7 @@
   async function findNearby(){
     if(!navigator.geolocation){ setStatus('Геолокация не поддерживается', 'err'); return; }
     const brands = selValues(els.brand);
-    const wantFresh = els.fresh.value || '';
+    const wantFresh = selValues(els.fresh);
     setStatus('Получаю геолокацию…');
     navigator.geolocation.getCurrentPosition(async pos=>{
       const {latitude,longitude}=pos.coords; setStatus('Ищу ближайшие…');
@@ -343,7 +343,7 @@
       city:    els.city.value || '',
       brands:  selValues(els.brand),
       fuel:    (els.fuel.value || '95').toLowerCase(),
-      fresh:   els.fresh.value || ''
+      fresh:   selValues(els.fresh)     // массив кодов: today/yesterday/daybefore/other
     };
     try{ tg.sendData(JSON.stringify(payload)); setStatus('Отправлено в чат ✔','ok'); }
     catch(e){ setStatus('Не удалось отправить','err'); }
@@ -357,7 +357,7 @@
   const saved = restoreState();
   if (saved.f) els.fuel.value = saved.f;
   if (saved.l) els.limit.value = saved.l;
-  if (saved.fr) els.fresh.value = saved.fr;
+  preselectFresh(saved.frs || []);
   try{ const g = JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null&&g.lon!=null) setLastGeo(g.lat,g.lon);}catch{}
   if (tg) { registerFromWebApp(); }
   loadCountries().then(applyFilters);
