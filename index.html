@@ -6,8 +6,10 @@
   <title>Fuel Finder — АЗС и My Car</title>
   <style>
     :root{ --bg:#0f0f10; --card:#15161a; --border:#26282d; --muted:#9aa0a6; --text:#e9eaee;
-           --btn:#1a73e8; --btn-text:#fff; --item:#121317; --ok:#22c55e; --err:#ef4444; --accent:#4da3ff; --nearby:#10b981; --tab:#0e1014 }
-    body.tg-dark{ --bg:#0b0e11; --card:#111418; --border:#1e2228; --muted:#8f98a3; --text:#e6e9ef; --item:#0f1318; --btn:#5e9bff; --nearby:#16a34a; --tab:#0b0d12 }
+           --btn:#1a73e8; --btn-text:#fff; --item:#121317; --ok:#22c55e; --err:#ef4444; --accent:#4da3ff; --nearby:#10b981; --tab:#0e1014;
+           --iconbg:#0f151d; --maps:#1a73e8; --waze:#26c4f1 }
+    body.tg-dark{ --bg:#0b0e11; --card:#111418; --border:#1e2228; --muted:#8f98a3; --text:#e6e9ef; --item:#0f1318; --btn:#5e9bff; --nearby:#16a34a; --tab:#0b0d12;
+                  --iconbg:#0c1117 }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",Arial}
     a{color:var(--accent);text-decoration:none}
@@ -31,6 +33,14 @@
     .item{background:var(--item);border:1px solid var(--border);border-radius:12px;padding:12px}
     .muted{color:var(--muted)} .price{font-weight:700}
     .footer{margin:18px 0 120px;color:var(--muted);font-size:12px;text-align:center}
+
+    /* блок ссылок-кнопок с иконками */
+    .links{display:flex;gap:10px;align-items:center;margin-top:6px}
+    .iconbtn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--iconbg);border:1px solid var(--border)}
+    .iconbtn:hover{filter:brightness(1.08)}
+    .iconbtn svg{width:22px;height:22px;display:block}
+    .iconbtn.maps svg{color:var(--maps)}
+    .iconbtn.waze svg{color:var(--waze)}
 
     /* таббар снизу */
     .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--tab);border-top:1px solid var(--border);display:flex}
@@ -173,6 +183,22 @@
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme === 'dark') document.body.classList.add('tg-dark'); } catch {} }
 
+  // Встроенные SVG-иконки (строки)
+  const ICONS = {
+    maps: `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" stroke-width="1.5"></path>
+        <circle cx="12" cy="10" r="3.2" stroke-width="1.5"></circle>
+      </svg>`,
+    waze: `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M7 16.5c-2.8 0-4-1.8-4-4.2C3 8.5 6 5 11 5c4.8 0 8 2.8 8 6.8 0 1.4-.4 2.6-1.2 3.6l1.2 2.1c.3.6-.3 1.3-.9 1.1l-2.4-.8c-.9.6-2 .9-3.2.9H7z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="10" cy="11" r="1.2" stroke-width="1.5"></circle>
+        <circle cx="14" cy="11" r="1.2" stroke-width="1.5"></circle>
+        <path d="M8.5 16.5c.4.9 1.3 1.5 2.5 1.5s2.1-.6 2.5-1.5" stroke-width="1.5" stroke-linecap="round"></path>
+      </svg>`
+  };
+
   // ===== регистрация пользователя (как раньше) =====
   async function registerFromWebApp(){
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
@@ -245,9 +271,7 @@
       const countries = j.countries || [];
       ALL_BRANDS = j.brands || [];
       setOptions(els.country, countries);
-      // заполнить бренды: stations-вид
       fillBrands(ALL_BRANDS, restoreState().brs||[]);
-      // заполнить бренды: my car (pref/discounts)
       setOptions(els.carPrefBrands, ALL_BRANDS);
       preselect(els.carPrefBrands, loadMyCar().preferred_brands || []);
 
@@ -271,9 +295,6 @@
       const cities = j.cities || [];
       els.city.innerHTML = `<option value="">Все</option>` + cities.map(ci=>`<option>${ci}</option>`).join('');
       if (prefCity && cities.includes(prefCity)) els.city.value = prefCity;
-      // бренды по стране (если нужны строго страновые):
-      // fillBrands(j.brands || ALL_BRANDS, prefBrands || []);
-      // оставим общий список, чтобы предпочтения не сбрасывались
       setStatus('Готово');
     }catch(e){ console.error(e); setStatus('Ошибка загрузки городов','err'); els.city.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.city.disabled=false; els.brand.disabled=false; }
@@ -346,10 +367,13 @@
         <div><b>${i+1}. ${it.name}</b> — <span class="price">${price} €/л</span></div>
         <div class="muted">${info}</div>
         <div class="muted">${it.address || ''}</div>
-        <div>
-          <a href="${gmaps}" target="_blank" rel="noopener" class="muted">Открыть в картах</a>
-          ·
-          <a href="${waze}" target="_blank" rel="noopener" class="muted">Открыть в Waze</a>
+        <div class="links">
+          <a class="iconbtn maps" href="${gmaps}" target="_blank" rel="noopener" aria-label="Открыть в Google Maps" title="Открыть в Google Maps">
+            ${ICONS.maps}
+          </a>
+          <a class="iconbtn waze" href="${waze}" target="_blank" rel="noopener" aria-label="Открыть в Waze" title="Открыть в Waze">
+            ${ICONS.waze}
+          </a>
         </div>
       </div>`;
     }).join('');
@@ -400,10 +424,13 @@
         <div><b>${i+1}. ${it.name}</b> — <span class="price">${price} €/л</span></div>
         <div class="muted">${head}</div>
         <div class="muted">${it.address || ''}</div>
-        <div>
-          <a href="${gmaps}" target="_blank" rel="noopener" class="muted">Открыть в картах</a>
-          ·
-          <a href="${waze}" target="_blank" rel="noopener" class="muted">Открыть в Waze</a>
+        <div class="links">
+          <a class="iconbtn maps" href="${gmaps}" target="_blank" rel="noopener" aria-label="Открыть в Google Maps" title="Открыть в Google Maps">
+            ${ICONS.maps}
+          </a>
+          <a class="iconbtn waze" href="${waze}" target="_blank" rel="noopener" aria-label="Открыть в Waze" title="Открыть в Waze">
+            ${ICONS.waze}
+          </a>
         </div>
       </div>`;
     }).join('');
@@ -420,7 +447,7 @@
     catch(e){ setStatus('Не удалось отправить','err'); }
   }
 
-  // ===== My Car: UI скидок =====
+  // ===== My Car: скидки UI =====
   function makeDiscRow(brand='', off=''){
     const row = document.createElement('div');
     row.className = 'disc-row';
@@ -526,13 +553,10 @@
 
   try{ const g = JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null&&g.lon!=null) setLastGeo(g.lat,g.lon);}catch{}
   if (tg) { registerFromWebApp(); }
-  loadCountries().then(()=> { // после meta у нас есть ALL_BRANDS
-    // обновим preferred brands и скидки брендов на основе сохранённого профиля
+  loadCountries().then(()=> {
     setOptions(els.carPrefBrands, ALL_BRANDS);
     preselect(els.carPrefBrands, mcSaved.preferred_brands || []);
-    // перерасставим скидочные строки с валидными брендами
     loadDiscounts(els.discList, mcSaved.discounts || []);
-    // если в профиле есть бренды — применим их к фильтрам по умолчанию
     if (mcSaved.preferred_brands && mcSaved.preferred_brands.length){
       preselect(els.brand, mcSaved.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
     } else if (saved.brs) {
