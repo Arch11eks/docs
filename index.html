@@ -794,3 +794,436 @@
     try{ 
       const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); 
       if(!s.frs && s.fr) s.frs = [s.fr];
+      return s; 
+    } catch { 
+      return {}; 
+    }
+  }
+  
+  function saveMyCar(mc){ 
+    localStorage.setItem('fuelMyCar', JSON.stringify(mc)); 
+  }
+  
+  function loadMyCar(){ 
+    try{ 
+      return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); 
+    } catch {
+      return {};
+    } 
+  }
+
+  // Meta data loading
+  let ALL_BRANDS = [];
+  
+  async function loadCountries(){
+    setStatus('🔄 Загружаю данные...'); 
+    els.country.disabled = true; 
+    els.country.innerHTML = `<option>Загрузка...</option>`;
+    els.country.classList.add('loading');
+    
+    try{
+      const j = await fetchJSON(`${API_BASE}/meta`);
+      const countries = j.countries || [];
+      ALL_BRANDS = j.brands || [];
+      setOptions(els.country, countries);
+      fillBrands(ALL_BRANDS, restoreState().brs||[]);
+      setOptions(els.carPrefBrands, ALL_BRANDS);
+      preselect(els.carPrefBrands, loadMyCar().preferred_brands || []);
+
+      const saved = restoreState();
+      if (saved.c && countries.includes(saved.c)) els.country.value = saved.c;
+      await onCountryChange(saved.ci, saved.brs || []);
+      preselect(els.fresh, saved.frs || []);
+      setStatus('✅ Готов к поиску');
+    } catch(e) { 
+      console.error(e); 
+      setStatus('❌ Ошибка загрузки данных', 'err'); 
+      els.country.innerHTML = `<option>Ошибка</option>`; 
+    } finally { 
+      els.country.disabled = false; 
+      els.country.classList.remove('loading');
+    }
+  }
+  
+  function fillBrands(brands, preselectVals){
+    els.brand.innerHTML = (brands||[]).map(b => `<option value="${b}">${b}</option>`).join('');
+    preselect(els.brand, preselectVals||[]);
+  }
+
+  async function onCountryChange(prefCity, prefBrands){
+    const c = els.country.value; 
+    setStatus('🔄 Загружаю города...'); 
+    els.city.disabled = true; 
+    els.brand.disabled = true;
+    els.city.classList.add('loading');
+    
+    try{
+      const j = await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`);
+      const cities = j.cities || [];
+      els.city.innerHTML = `<option value="">Все города</option>` + cities.map(ci=>`<option>${ci}</option>`).join('');
+      if (prefCity && cities.includes(prefCity)) els.city.value = prefCity;
+      setStatus('✅ Готов к поиску');
+    } catch(e) { 
+      console.error(e); 
+      setStatus('❌ Ошибка загрузки городов', 'err'); 
+      els.city.innerHTML = `<option>Ошибка</option>`; 
+    } finally { 
+      els.city.disabled = false; 
+      els.brand.disabled = false; 
+      els.city.classList.remove('loading');
+    }
+  }
+
+  // Freshness translation functions
+  function _norm(s){ 
+    if(!s) return ''; 
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); 
+  }
+  
+  function translateFreshLabel(raw){
+    if (!raw) return '';
+    const n = _norm(raw);
+    if (['sodien','siandien','tana','tana.','sodien.','siandien.','šodien'].includes(n)) return 'Сегодня';
+    if (['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
+    if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
+    if (/\d/.test(raw)) return raw;
+    return raw;
+  }
+  
+  function classifyFresh(it){
+    const raw = (it.fresh_label||'').trim(), n = _norm(raw);
+    if (['sodien','siandien','tana','šodien'].includes(n)) return 'today';
+    if (['vakar','eile'].includes(n)) return 'yesterday';
+    if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'daybefore';
+    if (it.fresh_days === 0) return 'today';
+    if (it.fresh_days === 1) return 'yesterday';
+    if (it.fresh_days === 2) return 'daybefore';
+    return 'other';
+  }
+  
+  function passesFreshFilter(it, wantArr){
+    if (!wantArr || wantArr.length === 0) return true;
+    return wantArr.includes(classifyFresh(it));
+  }
+
+  // Search functionality
+  async function applyFilters(){
+    setStatus('🔍 Ищу станции...'); 
+    els.list.innerHTML = '';
+    const brands = selValues(els.brand);
+    const wantFresh = selValues(els.fresh);
+    const qs = new URLSearchParams({
+      country: els.country.value || '', 
+      city: els.city.value || '',
+      brands: brands.join(','), 
+      fuel: els.fuel.value || '95',
+      limit: els.limit.value || 50,
+    });
+    
+    try{
+      const j = await fetchJSON(`${API_BASE}/search?`+qs.toString());
+      const items = (j.items||[]).filter(it => passesFreshFilter(it, wantFresh));
+      setStatus(`✅ Найдено станций: ${items.length}`);
+      renderList(items);
+      saveState();
+    } catch(e) {
+      console.error(e);
+      setStatus('❌ Ошибка поиска', 'err');
+      els.list.innerHTML = `<div class="item"><span style="color: var(--error)">Ошибка: ${String(e).slice(0,200)}</span></div>`;
+    }
+  }
+
+  function renderList(items){
+    if(!items.length){ 
+      els.list.innerHTML = '<div class="item"><div style="color: var(--muted); text-align: center; padding: 20px;">🔍 Станции не найдены<br><small>Попробуйте изменить фильтры</small></div></div>'; 
+      return;
+    }
+    
+    els.list.innerHTML = items.map((it,i)=>{
+      const price = it.price != null ? Number(it.price).toFixed(3) : '—';
+      const freshTxt = translateFreshLabel(it.fresh_label) || 
+        (it.fresh_days != null ? 
+          (it.fresh_days === 0 ? 'Сегодня' : 
+           it.fresh_days === 1 ? 'Вчера' : 
+           it.fresh_days === 2 ? 'Позавчера' : `${it.fresh_days} дн. назад`) 
+          : '');
+      const updated = freshTxt ? ` • 📅 ${freshTxt}` : '';
+      const info = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + updated;
+
+      const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
+      const gmaps = `https://maps.google.com/?q=${q}`;
+      const waze = (it.lat != null && it.lon != null)
+        ? `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`
+        : `https://waze.com/ul?q=${q}&navigate=yes`;
+
+      return `<div class="item interactive">
+        <div class="item-title">${i+1}. ${it.name}</div>
+        <div class="item-price">${price} €/л</div>
+        <div class="item-info">${info}</div>
+        <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
+        <div class="links">
+          <a class="icon-btn maps" href="${gmaps}" target="_blank" rel="noopener" aria-label="Открыть в Google Maps" title="Открыть в Google Maps">
+            ${ICONS.maps}
+          </a>
+          <a class="icon-btn waze" href="${waze}" target="_blank" rel="noopener" aria-label="Открыть в Waze" title="Открыть в Waze">
+            ${ICONS.waze}
+          </a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function findNearby(){
+    if(!navigator.geolocation){ 
+      setStatus('❌ Геолокация не поддерживается', 'err'); 
+      return; 
+    }
+    
+    const brands = selValues(els.brand);
+    const wantFresh = selValues(els.fresh);
+    setStatus('📍 Получаю местоположение...');
+    
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const {latitude, longitude} = pos.coords; 
+      setStatus('🔍 Ищу ближайшие станции...');
+      
+      const qs = new URLSearchParams({
+        lat: latitude, 
+        lon: longitude,
+        brands: brands.join(','), 
+        fuel: els.fuel.value || '95',
+        limit: els.limit.value || 50, 
+        routing: 'drive'
+      });
+      
+      try{
+        const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
+        const items = (j.items||[]).filter(it => passesFreshFilter(it, wantFresh));
+        setStatus(`✅ Найдено рядом: ${items.length} станций`);
+        renderListWithDistance(items);
+        localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat: latitude, lon: longitude}));
+        setLastGeo(latitude, longitude);
+      } catch(e) { 
+        console.error(e); 
+        setStatus('❌ Ошибка поиска рядом', 'err'); 
+      }
+    }, err => setStatus('❌ Не удалось получить геолокацию: ' + err.message, 'err'),
+       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  }
+
+  function renderListWithDistance(items){
+    if(!items.length){ 
+      els.list.innerHTML = '<div class="item"><div style="color: var(--muted); text-align: center; padding: 20px;">📍 Рядом станций не найдено<br><small>Попробуйте увеличить радиус поиска</small></div></div>'; 
+      return;
+    }
+    
+    els.list.innerHTML = items.map((it,i)=>{
+      const price = it.price != null ? Number(it.price).toFixed(3) : '—';
+      const freshTxt = translateFreshLabel(it.fresh_label) || 
+        (it.fresh_days != null ? 
+          (it.fresh_days === 0 ? 'Сегодня' : 
+           it.fresh_days === 1 ? 'Вчера' : 
+           it.fresh_days === 2 ? 'Позавчера' : `${it.fresh_days} дн. назад`) 
+          : '');
+      const upd = freshTxt ? ` • 📅 ${freshTxt}` : '';
+
+      const straight = (it.distance_km != null) ? ` • 📏 ${Number(it.distance_km).toFixed(1)} км` : '';
+      const road = (it.drive_distance_km != null || it.drive_duration_min != null)
+        ? ` • 🛣️ ${it.drive_distance_km != null ? Number(it.drive_distance_km).toFixed(1) + ' км' : '—'}${it.drive_duration_min != null ? ', ' + Number(it.drive_duration_min).toFixed(0) + ' мин' : ''}`
+        : '';
+      const head = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + upd + straight + road;
+
+      const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
+      const gmaps = `https://maps.google.com/?q=${q}`;
+      const waze = `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`;
+
+      return `<div class="item interactive">
+        <div class="item-title">${i+1}. ${it.name}</div>
+        <div class="item-price">${price} €/л</div>
+        <div class="item-info">${head}</div>
+        <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
+        <div class="links">
+          <a class="icon-btn maps" href="${gmaps}" target="_blank" rel="noopener" aria-label="Открыть в Google Maps" title="Открыть в Google Maps">
+            ${ICONS.maps}
+          </a>
+          <a class="icon-btn waze" href="${waze}" target="_blank" rel="noopener" aria-label="Открыть в Waze" title="Открыть в Waze">
+            ${ICONS.waze}
+          </a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function sendToBot(){
+    if(!tg || !tg.sendData){ 
+      setStatus('❌ Откройте через Telegram для отправки', 'err'); 
+      return; 
+    }
+    
+    const payload = {
+      country: els.country.value || '', 
+      city: els.city.value || '',
+      brands: selValues(els.brand), 
+      fuel: (els.fuel.value || '95').toLowerCase(),
+      fresh: selValues(els.fresh)
+    };
+    
+    try{ 
+      tg.sendData(JSON.stringify(payload)); 
+      setStatus('✅ Отправлено в чат!', 'ok'); 
+    } catch(e) { 
+      setStatus('❌ Не удалось отправить', 'err'); 
+    }
+  }
+
+  // Car profile management
+  function makeDiscRow(brand = '', off = ''){
+    const row = document.createElement('div');
+    row.className = 'disc-row';
+    
+    const sel = document.createElement('select'); 
+    sel.innerHTML = (ALL_BRANDS||[]).map(b => `<option>${b}</option>`).join('');
+    if (brand) sel.value = brand;
+    
+    const inp = document.createElement('input'); 
+    inp.type = 'number'; 
+    inp.step = '0.01'; 
+    inp.min = '0'; 
+    inp.placeholder = '0.04';
+    if (off !== '' && off != null) inp.value = off;
+    
+    const del = document.createElement('button'); 
+    del.className = 'btn-secondary'; 
+    del.innerHTML = '🗑️'; 
+    del.title = 'Удалить скидку';
+    del.onclick = () => row.remove();
+    
+    row.appendChild(sel); 
+    row.appendChild(inp); 
+    row.appendChild(del);
+    return row;
+  }
+  
+  function loadDiscounts(listEl, discounts){
+    listEl.innerHTML = '';
+    (discounts||[]).forEach(d => listEl.appendChild(makeDiscRow(d.brand, d.off_eur_per_l)));
+    if (!discounts || discounts.length === 0) listEl.appendChild(makeDiscRow());
+  }
+  
+  function collectDiscounts(listEl){
+    const out = []; 
+    listEl.querySelectorAll('.disc-row').forEach(r => {
+      const brand = r.querySelector('select')?.value || '';
+      const off = parseFloat(r.querySelector('input')?.value);
+      if (brand && !isNaN(off) && off > 0) out.push({brand, off_eur_per_l: +off});
+    });
+    return out;
+  }
+
+  function readMyCarFromUI(){
+    return {
+      fuel_type: els.carFuel.value || '95',
+      consumption_l_per_100: +els.carCons.value || null,
+      tank_capacity_l: +els.carTank.value || null,
+      current_level_l: +els.carCurrent.value || null,
+      time_value_eur_per_hour: +els.carTimeVal.value || 0,
+      max_detour_min: +els.carDetour.value || 0,
+      preferred_brands: selValues(els.carPrefBrands),
+      discounts: collectDiscounts(els.discList)
+    };
+  }
+  
+  function writeMyCarToUI(mc){
+    if (!mc) return;
+    if (mc.fuel_type) els.carFuel.value = mc.fuel_type;
+    if (mc.consumption_l_per_100 != null) els.carCons.value = mc.consumption_l_per_100;
+    if (mc.tank_capacity_l != null) els.carTank.value = mc.tank_capacity_l;
+    if (mc.current_level_l != null) els.carCurrent.value = mc.current_level_l;
+    if (mc.time_value_eur_per_hour != null) els.carTimeVal.value = mc.time_value_eur_per_hour;
+    if (mc.max_detour_min != null) els.carDetour.value = mc.max_detour_min;
+    preselect(els.carPrefBrands, mc.preferred_brands || []);
+    loadDiscounts(els.discList, mc.discounts || []);
+  }
+  
+  function applyMyCarToFilters(mc){
+    if (!mc) mc = loadMyCar();
+    if (mc.fuel_type){ els.fuel.value = mc.fuel_type; }
+    if (mc.preferred_brands && mc.preferred_brands.length){
+      preselect(els.brand, mc.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
+    }
+    saveState();
+  }
+
+  // Tab switching
+  function switchTab(name){
+    const isStations = (name === 'stations');
+    els.screenStations.classList.toggle('active', isStations);
+    els.screenCar.classList.toggle('active', !isStations);
+    els.tabStations.classList.toggle('active', isStations);
+    els.tabCar.classList.toggle('active', !isStations);
+  }
+
+  // Event listeners
+  els.country.addEventListener('change', () => onCountryChange('', []));
+  els.apply.addEventListener('click', applyFilters);
+  els.nearby.addEventListener('click', findNearby);
+  els.send.addEventListener('click', sendToBot);
+
+  els.discAdd.addEventListener('click', () => els.discList.appendChild(makeDiscRow()));
+  
+  els.carSave.addEventListener('click', () => {
+    const mc = readMyCarFromUI();
+    saveMyCar(mc);
+    setCarStatus('💾 Профиль сохранен!', 'ok');
+  });
+  
+  els.carApplyToFilters.addEventListener('click', () => {
+    applyMyCarToFilters();
+    setCarStatus('🔄 Применено к фильтрам!', 'ok');
+    switchTab('stations');
+    applyFilters();
+  });
+  
+  els.carReset.addEventListener('click', () => {
+    if (confirm('🗑️ Удалить профиль автомобиля?')) {
+      localStorage.removeItem('fuelMyCar');
+      writeMyCarToUI({});
+      setCarStatus('🗑️ Профиль очищен', 'ok');
+    }
+  });
+
+  els.tabStations.addEventListener('click', () => switchTab('stations'));
+  els.tabCar.addEventListener('click', () => switchTab('car'));
+
+  // Initialization
+  const saved = restoreState();
+  if (saved.f) els.fuel.value = saved.f;
+  if (saved.l) els.limit.value = saved.l;
+
+  const mcSaved = loadMyCar();
+  writeMyCarToUI(mcSaved);
+  if (mcSaved.fuel_type) els.fuel.value = mcSaved.fuel_type;
+
+  try{ 
+    const g = JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); 
+    if(g.lat != null && g.lon != null) setLastGeo(g.lat, g.lon);
+  } catch {}
+
+  if (tg) { registerFromWebApp(); }
+  
+  loadCountries().then(() => {
+    setOptions(els.carPrefBrands, ALL_BRANDS);
+    preselect(els.carPrefBrands, mcSaved.preferred_brands || []);
+    loadDiscounts(els.discList, mcSaved.discounts || []);
+    if (mcSaved.preferred_brands && mcSaved.preferred_brands.length){
+      preselect(els.brand, mcSaved.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
+    } else if (saved.brs) {
+      preselect(els.brand, saved.brs);
+    }
+    preselect(els.fresh, saved.frs || []);
+    applyFilters();
+  });
+})();
+</script>
+</body>
+</html>
