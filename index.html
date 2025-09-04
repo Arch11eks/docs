@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Fuel Finder — АЗС и My Car</title>
+  <title>Fuel Finder — АЗС, Маршрут и Мой авто</title>
   <style>
     :root{ 
       --bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
@@ -62,7 +62,7 @@
     .btn-link{background:transparent;color:var(--accent);border:none;padding:8px 0;text-transform:none;letter-spacing:normal}
     .grid{display:grid;gap:20px}
     .grid-stations{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-    .grid-car{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+    .grid-car,.grid-route{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
     .row{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap}
     .row>*{flex:1;min-width:200px}
     .status{margin-top:16px;padding:12px 16px;border-radius:12px;font-weight:500;min-height:20px;
@@ -87,9 +87,6 @@
     .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--secondary);
       border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:500;backdrop-filter:blur(10px)}
     .geo-chip{background:rgba(16,185,129,.1);border-color:#10b981;color:#10b981}
-    .discounts{display:grid;gap:12px}
-    .disc-row{display:grid;grid-template-columns:1fr 140px 50px;gap:12px;align-items:end}
-    .disc-row button{width:50px;height:50px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
     .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);backdrop-filter:blur(20px);
       border-top:1px solid var(--border);display:flex;z-index:100;box-shadow:0 -4px 6px -1px rgba(0,0,0,.1)}
     .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;color:var(--muted);
@@ -105,12 +102,12 @@
     .footer{margin:32px 0 120px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
     @media (max-width:768px){
       .wrap{padding:16px 12px 100px}.card{padding:20px}
-      .grid-stations{grid-template-columns:1fr}.grid-car{grid-template-columns:1fr}
-      .row{flex-direction:column}.row>*{min-width:unset}.disc-row{grid-template-columns:1fr 100px 44px}
+      .grid-stations{grid-template-columns:1fr}.grid-car,.grid-route{grid-template-columns:1fr}
+      .row{flex-direction:column}.row>*{min-width:unset}
       h1{font-size:24px}
     }
     @media (max-width:480px){
-      .wrap{padding:12px 8px 100px}.card{padding:16px}.disc-row{grid-template-columns:1fr 80px 40px}
+      .wrap{padding:12px 8px 100px}.card{padding:16px}
     }
     .loading{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   </style>
@@ -118,6 +115,7 @@
 </head>
 <body>
 <div class="wrap">
+  <!-- СТАНЦИИ -->
   <div id="screen-stations" class="screen active">
     <h1>⛽ Поиск станций</h1>
     <div class="card">
@@ -133,7 +131,7 @@
         <div>
           <label for="brand">🏢 Бренды</label>
           <select id="brand" multiple size="4"></select>
-          <div class="hint">Удерживайте Ctrl для выбора нескольких</div>
+          <div class="hint">Удерживайте Ctrl/⌘ для выбора нескольких</div>
         </div>
         <div>
           <label for="fuel">⛽ Тип топлива</label>
@@ -183,6 +181,65 @@
     </div>
   </div>
 
+  <!-- МАРШРУТ -->
+  <div id="screen-route" class="screen">
+    <h1>🧭 Маршрут</h1>
+    <div class="card">
+      <div class="grid grid-route">
+        <div>
+          <label for="route_to">📍 Куда едем (адрес/место)</label>
+          <input id="route_to" type="text" placeholder="Например: Riga, Brivibas 1 или 'Tallinn old town'">
+          <div class="hint">Адрес назначения. Старт возьмём по геолокации.</div>
+        </div>
+        <div>
+          <label for="route_liters">⛽ Сколько заправить (л)</label>
+          <input id="route_liters" type="number" step="1" min="1" placeholder="Например, 20">
+        </div>
+        <div>
+          <label for="route_fuel">Тип топлива</label>
+          <select id="route_fuel">
+            <option value="95">95 бензин</option>
+            <option value="98">98 бензин</option>
+            <option value="diesel">Дизель</option>
+            <option value="lpg">Газ</option>
+          </select>
+        </div>
+        <div>
+          <label for="route_brands">Бренды</label>
+          <select id="route_brands" multiple size="4"></select>
+        </div>
+        <div>
+          <label for="route_fresh">Свежесть</label>
+          <select id="route_fresh" multiple size="4">
+            <option value="today">Сегодня</option>
+            <option value="yesterday">Вчера</option>
+            <option value="daybefore">Позавчера</option>
+            <option value="other">Другое</option>
+          </select>
+        </div>
+        <div>
+          <label for="route_limit">Количество</label>
+          <select id="route_limit">
+            <option value="10">10 станций</option>
+            <option value="20" selected>20 станций</option>
+            <option value="50">50 станций</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="route_myloc" class="btn-secondary">📍 Моя локация</button>
+        <button id="route_go" class="btn-primary">🧮 Посчитать по пути</button>
+        <button id="route_send" class="btn-secondary">📤 Отправить в чат</button>
+      </div>
+
+      <div id="route_status" class="status">Укажите адрес и нажмите «Посчитать»</div>
+    </div>
+
+    <div id="route_list" class="list"></div>
+  </div>
+
+  <!-- МОЙ АВТО -->
   <div id="screen-car" class="screen">
     <h1>🚗 Мой автомобиль</h1>
     <div class="card">
@@ -221,16 +278,7 @@
       <div style="margin-top:24px">
         <label for="car_pref_brands">⭐ Предпочитаемые бренды</label>
         <select id="car_pref_brands" multiple size="6" style="height:140px"></select>
-        <div class="hint">Автоматически применяются при поиске станций</div>
-      </div>
-
-      <div style="margin-top:24px">
-        <label>💳 Скидки по брендам (€/л)</label>
-        <div id="discList" class="discounts"></div>
-        <div class="row" style="margin-top:12px">
-          <button id="discAdd" class="btn-secondary" style="max-width:240px">➕ Добавить скидку</button>
-          <div class="hint" style="align-self:center;margin-top:0;">Например, 0.04 = 4 цента</div>
-        </div>
+        <div class="hint">Автоматически применяются при поиске</div>
       </div>
 
       <div class="row" style="margin-top:24px">
@@ -247,7 +295,8 @@
 <!-- таббар -->
 <div class="tabbar">
   <div id="tabStations" class="tab-btn active"><div class="tab-icon">⛽</div><div>Станции</div></div>
-  <div id="tabCar" class="tab-btn"><div class="tab-icon">🚗</div><div>Мой авто</div></div>
+  <div id="tabRoute"    class="tab-btn"><div class="tab-icon">🧭</div><div>Маршрут</div></div>
+  <div id="tabCar"      class="tab-btn"><div class="tab-icon">🚗</div><div>Мой авто</div></div>
 </div>
 
 <script>
@@ -256,14 +305,17 @@
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme === 'dark') document.body.classList.add('tg-dark'); } catch {} }
 
-  // Положи рядом в корне репозитория два файла: maps.png и waze.png
+  // Положи эти картинки рядом с index.html (или поправь пути)
   const ASSETS = { maps: "maps.png", waze: "waze.png" };
 
-  // Состояние текущего экрана/результатов
-  let LAST_MODE = 'search';    // 'search' | 'nearby'
-  let LAST_ITEMS = [];         // текущий показанный список
-  let LAST_GEO = null;         // {lat, lon} при режиме "рядом"
+  // Текущий режим + показанный список
+  let LAST_MODE = 'search';     // 'search' | 'nearby' | 'route'
+  let LAST_ITEMS = [];
+  let LAST_GEO = null;          // {lat,lon} старт для nearby/route
+  let ROUTE_TO_TEXT = '';       // текст назначения
+  let ROUTE_LITERS = null;
 
+  // Регистрация пользователя (WebApp)
   async function registerFromWebApp(){
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
     const u = tg.initDataUnsafe.user;
@@ -282,37 +334,54 @@
     } catch(e) {}
   }
 
+  // Элементы
   const els = {
+    // stations
     country:$('#country'), city:$('#city'), brand:$('#brand'), fuel:$('#fuel'),
     fresh:$('#fresh'), limit:$('#limit'), apply:$('#apply'), nearby:$('#nearby'),
     send:$('#send'), list:$('#list'), status:$('#status'), lastGeo:$('#lastGeoChip'),
     geoRow:$('#geoRow'),
+    // route
+    routeTo:$('#route_to'), routeLiters:$('#route_liters'), routeFuel:$('#route_fuel'),
+    routeBrands:$('#route_brands'), routeFresh:$('#route_fresh'), routeLimit:$('#route_limit'),
+    routeMyLoc:$('#route_myloc'), routeGo:$('#route_go'), routeSend:$('#route_send'),
+    routeStatus:$('#route_status'), routeList:$('#route_list'),
+    // car
     carFuel:$('#car_fuel_type'), carCons:$('#car_consumption'), carTank:$('#car_tank'),
     carCurrent:$('#car_current'), carTimeVal:$('#car_time_value'), carDetour:$('#car_detour'),
-    carPrefBrands:$('#car_pref_brands'), discList:$('#discList'), discAdd:$('#discAdd'),
-    carSave:$('#carSave'), carApplyToFilters:$('#carApplyToFilters'), carReset:$('#carReset'),
-    carStatus:$('#carStatus'),
-    screenStations:$('#screen-stations'), screenCar:$('#screen-car'),
-    tabStations:$('#tabStations'), tabCar:$('#tabCar')
+    carPrefBrands:$('#car_pref_brands'), carSave:$('#carSave'),
+    carApplyToFilters:$('#carApplyToFilters'), carReset:$('#carReset'), carStatus:$('#carStatus'),
+    // screens/tabs
+    screenStations:$('#screen-stations'), screenRoute:$('#screen-route'), screenCar:$('#screen-car'),
+    tabStations:$('#tabStations'), tabRoute:$('#tabRoute'), tabCar:$('#tabCar')
   };
   function $(id){ return document.getElementById(id.replace(/^#/,'')); }
 
+  // Utils
   async function fetchJSON(url){ const r=await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
   function setStatus(m,c=''){ els.status.textContent=m; els.status.className='status '+(c||''); }
+  function setRouteStatus(m,c=''){ els.routeStatus.textContent=m; els.routeStatus.className='status '+(c||''); }
   function setCarStatus(m,c=''){ els.carStatus.textContent=m; els.carStatus.className='status '+(c||''); }
   function selValues(s){ return Array.from(s.selectedOptions).map(o=>o.value).filter(Boolean); }
   function setOptions(s, opts){ s.innerHTML = opts.map(o=>`<option value="${o}">${o}</option>`).join(''); }
   function preselect(s, vals){ const set=new Set(vals||[]); Array.from(s.options).forEach(o=>o.selected=set.has(o.value)); }
   function setLastGeo(lat,lon){ if(lat==null||lon==null){ els.geoRow.style.display='none'; return;} els.geoRow.style.display='flex'; els.lastGeo.innerHTML=`📍 Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
 
+  // Persist
   function saveState(){ localStorage.setItem('fuelFinderState', JSON.stringify({
     c:els.country.value, ci:els.city.value, brs:selValues(els.brand),
     f:els.fuel.value, l:els.limit.value, frs:selValues(els.fresh)
   })); }
   function restoreState(){ try{ const s=JSON.parse(localStorage.getItem('fuelFinderState')||'{}'); if(!s.frs&&s.fr)s.frs=[s.fr]; return s; }catch{return{}}}
+  function saveRouteState(){ localStorage.setItem('fuelRouteState', JSON.stringify({
+    to: els.routeTo.value || '', liters: els.routeLiters.value || '', fuel: els.routeFuel.value || '95',
+    brands: selValues(els.routeBrands), fresh: selValues(els.routeFresh), limit: els.routeLimit.value || 20
+  })); }
+  function loadRouteState(){ try{ return JSON.parse(localStorage.getItem('fuelRouteState')||'{}'); }catch{return{}} }
   function saveMyCar(mc){ localStorage.setItem('fuelMyCar', JSON.stringify(mc)); }
   function loadMyCar(){ try{ return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); }catch{return{}} }
 
+  // Meta
   let ALL_BRANDS = [];
   async function loadCountries(){
     setStatus('🔄 Загружаю данные…'); els.country.disabled=true; els.country.innerHTML=`<option>Загрузка…</option>`; els.country.classList.add('loading');
@@ -320,13 +389,23 @@
       const j=await fetchJSON(`${API_BASE}/meta`);
       const countries=j.countries||[]; ALL_BRANDS=j.brands||[];
       setOptions(els.country, countries);
+      // brands to stations & route & car
       fillBrands(ALL_BRANDS, restoreState().brs||[]);
+      setOptions(els.routeBrands, ALL_BRANDS);
       setOptions(els.carPrefBrands, ALL_BRANDS);
       preselect(els.carPrefBrands, loadMyCar().preferred_brands||[]);
       const saved=restoreState();
       if(saved.c && countries.includes(saved.c)) els.country.value=saved.c;
       await onCountryChange(saved.ci);
       preselect(els.fresh, saved.frs||[]);
+      // restore route state
+      const rs=loadRouteState();
+      if(rs.to) els.routeTo.value=rs.to;
+      if(rs.liters) els.routeLiters.value=rs.liters;
+      if(rs.fuel) els.routeFuel.value=rs.fuel;
+      if(rs.brands) preselect(els.routeBrands, rs.brands);
+      if(rs.fresh) preselect(els.routeFresh, rs.fresh);
+      if(rs.limit) els.routeLimit.value=rs.limit;
       setStatus('✅ Готов к поиску');
     }catch(e){ console.error(e); setStatus('❌ Ошибка загрузки данных','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.country.disabled=false; els.country.classList.remove('loading'); }
@@ -344,7 +423,7 @@
     finally{ els.city.disabled=false; els.brand.disabled=false; els.city.classList.remove('loading'); }
   }
 
-  // Перевод и классификация свежести
+  // Freshness
   function _norm(s){ if(!s) return ''; return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
   function translateFreshLabel(raw){
     if(!raw) return ''; const n=_norm(raw);
@@ -365,11 +444,24 @@
   }
   function passesFreshFilter(it, want){ if(!want||!want.length) return true; return want.includes(classifyFresh(it)); }
 
-  // Поиск (учитываем limit на клиенте)
+  // Links
+  function gmapsDir(it){
+    if(it.lat!=null && it.lon!=null){
+      return `https://www.google.com/maps/dir/?api=1&destination=${it.lat},${it.lon}&travelmode=driving`;
+    }
+    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
+    return `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
+  }
+  function wazeNav(it){
+    if(it.lat!=null && it.lon!=null) return `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`;
+    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
+    return `https://waze.com/ul?q=${q}&navigate=yes`;
+  }
+
+  // STATIONS SEARCH
   async function applyFilters(){
     setStatus('🔍 Ищу станции…'); els.list.innerHTML='';
-    const brands=selValues(els.brand);
-    const wantFresh=selValues(els.fresh);
+    const brands=selValues(els.brand), wantFresh=selValues(els.fresh);
     const limit = parseInt(els.limit.value, 10) || 50;
 
     const qs=new URLSearchParams({
@@ -390,20 +482,6 @@
       els.list.innerHTML=`<div class="item"><span style="color:#ef4444">${String(e).slice(0,200)}</span></div>`;
     }
   }
-
-  function gmapsDir(it){
-    if(it.lat!=null && it.lon!=null){
-      return `https://www.google.com/maps/dir/?api=1&destination=${it.lat},${it.lon}&travelmode=driving`;
-    }
-    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
-    return `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
-  }
-  function wazeNav(it){
-    if(it.lat!=null && it.lon!=null) return `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`;
-    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
-    return `https://waze.com/ul?q=${q}&navigate=yes`;
-  }
-
   function renderList(items){
     if(!items.length){
       els.list.innerHTML='<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">🔍 Станции не найдены</div></div>'; 
@@ -430,7 +508,7 @@
     }).join('');
   }
 
-  // «Рядом»
+  // NEARBY
   async function findNearby(){
     if(!navigator.geolocation){ setStatus('❌ Геолокация не поддерживается','err'); return; }
     const brands=selValues(els.brand), wantFresh=selValues(els.fresh);
@@ -458,7 +536,6 @@
     }, err=> setStatus('❌ Не удалось получить геолокацию: '+err.message,'err'),
        { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
   }
-
   function renderListWithDistance(items){
     if(!items.length){
       els.list.innerHTML='<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">📍 Рядом станций не найдено</div></div>'; 
@@ -489,20 +566,105 @@
     }).join('');
   }
 
-  // Отправка в чат — отправляем актуальные фильтры + режим + лимит + гео + превью списка
-  function sendToBot(){
-    if(!tg || !tg.sendData){ setStatus('❌ Откройте через Telegram для отправки','err'); return; }
+  // ROUTE
+  function setRouteFromCarIfAny(){
+    const mc=loadMyCar();
+    if(mc && mc.fuel_type) els.routeFuel.value = mc.fuel_type;
+  }
+  async function routeUseMyLocation(){
+    if(!navigator.geolocation){ setRouteStatus('❌ Геолокация не поддерживается','err'); return; }
+    setRouteStatus('📍 Получаю вашу локацию…');
+    return new Promise((resolve,reject)=>{
+      navigator.geolocation.getCurrentPosition(
+        pos=>{ const {latitude,longitude}=pos.coords; LAST_GEO={lat:latitude, lon:longitude}; localStorage.setItem('fuelFinderLastGeo', JSON.stringify(LAST_GEO)); setRouteStatus('✅ Старт задан по геолокации','ok'); resolve(LAST_GEO); },
+        err=>{ setRouteStatus('❌ '+err.message,'err'); reject(err); },
+        { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
+      );
+    });
+  }
+  async function routeCalculate(){
+    const to = (els.routeTo.value||'').trim();
+    const liters = parseFloat(els.routeLiters.value||'');
+    const fuel = els.routeFuel.value || '95';
+    const brands = selValues(els.routeBrands);
+    const fresh  = selValues(els.routeFresh);
+    const limit  = parseInt(els.routeLimit.value,10) || 20;
+
+    if(!to){ setRouteStatus('❌ Укажите адрес назначения','err'); return; }
+    // Старт: если нет сохранённой — берём текущую
+    let start = LAST_GEO;
+    if(!start){
+      try{ start = await routeUseMyLocation(); }
+      catch{ return; }
+    }
+
+    setRouteStatus('🧮 Считаю кандидатов по пути…');
+    const qs = new URLSearchParams({
+      from_lat:start.lat, from_lon:start.lon, to:to,
+      fuel, liters: !isNaN(liters) && liters>0 ? liters : '',
+      brands:brands.join(','), fresh:fresh.join(','), limit
+    });
+
+    try{
+      const j = await fetchJSON(`${API_BASE}/route?`+qs.toString());
+      let items = (j.items||[]);
+      // фильтр свежести на клиенте (если бекенд вернул всё)
+      items = items.filter(it => passesFreshFilter(it, fresh));
+      if(items.length > limit) items = items.slice(0, limit);
+
+      LAST_MODE='route'; LAST_ITEMS=items; ROUTE_TO_TEXT=to; ROUTE_LITERS = (!isNaN(liters)&&liters>0)?liters:null;
+      els.routeList.innerHTML = renderRouteItems(items);
+      setRouteStatus(`✅ Подходящих станций: ${items.length}`);
+      saveRouteState();
+    }catch(e){
+      console.error(e);
+      setRouteStatus('❌ Ошибка расчёта маршрута: '+String(e).slice(0,160),'err');
+    }
+  }
+  function renderRouteItems(items){
+    if(!items.length){
+      return '<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">🧭 Подходящих станций не найдено</div></div>';
+    }
+    return items.map((it,i)=>{
+      const price = it.price!=null ? Number(it.price).toFixed(3) : '—';
+      const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} дн. назад`) : '');
+      const road = (it.drive_distance_km!=null||it.drive_duration_min!=null)
+        ? ` • 🛣️ ${it.drive_distance_km!=null?Number(it.drive_distance_km).toFixed(1)+' км':'—'}${it.drive_duration_min!=null?', '+Number(it.drive_duration_min).toFixed(0)+' мин':''}`:'';
+      const info = [it.brand, it.country, it.city].filter(Boolean).join(' • ')
+                 + (freshTxt?` • 📅 ${freshTxt}`:'') + road;
+
+      return `<div class="item">
+        <div class="item-title">${i+1}. ${it.name}</div>
+        <div class="item-price">${price} €/л</div>
+        <div class="item-info">${info}</div>
+        <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
+        <div class="links">
+          <a class="icon-btn maps" href="${gmapsDir(it)}" target="_blank" rel="noopener" title="Маршрут в Google Maps">
+            <img src="${ASSETS.maps}" alt="Google Maps">
+          </a>
+          <a class="icon-btn waze" href="${wazeNav(it)}" target="_blank" rel="noopener" title="Маршрут в Waze">
+            <img src="${ASSETS.waze}" alt="Waze">
+          </a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // SEND TO BOT
+  function sendToBot(modeOverride){
+    if(!tg || !tg.sendData){ (modeOverride==='route'?setRouteStatus:setStatus)('❌ Откройте через Telegram для отправки','err'); return; }
     const payload = {
-      mode: LAST_MODE,
+      mode: modeOverride || LAST_MODE,
       filters: {
         country: els.country.value || '',
         city: els.city.value || '',
-        brands: selValues(els.brand),
-        fuel: (els.fuel.value || '95').toLowerCase(),
-        fresh: selValues(els.fresh),
-        limit: parseInt(els.limit.value, 10) || 50
+        brands: selValues( modeOverride==='route' ? els.routeBrands : els.brand),
+        fuel: ((modeOverride==='route' ? els.routeFuel.value : els.fuel.value) || '95').toLowerCase(),
+        fresh: selValues( modeOverride==='route' ? els.routeFresh : els.fresh),
+        limit: parseInt( (modeOverride==='route' ? els.routeLimit.value : els.limit.value), 10) || 50
       },
       geo: LAST_GEO,
+      route: modeOverride==='route' ? { to: els.routeTo.value || '', liters: els.routeLiters.value || '' } : undefined,
       preview: (LAST_ITEMS||[]).slice(0,10).map(it => ({
         id: it.id, name: it.name, brand: it.brand, price: it.price,
         city: it.city, country: it.country, address: it.address,
@@ -513,55 +675,79 @@
     };
     try{
       tg.sendData(JSON.stringify(payload));
-      setStatus('✅ Отправлено в чат!', 'ok');
+      (modeOverride==='route'?setRouteStatus:setStatus)('✅ Отправлено в чат!','ok');
     }catch(e){
-      setStatus('❌ Не удалось отправить', 'err');
+      (modeOverride==='route'?setRouteStatus:setStatus)('❌ Не удалось отправить','err');
     }
   }
 
-  // My Car (как у тебя — без изменения верстки)
-  function makeDiscRow(brand='',off=''){ const row=document.createElement('div'); row.className='disc-row';
-    const sel=document.createElement('select'); sel.innerHTML=(ALL_BRANDS||[]).map(b=>`<option>${b}</option>`).join(''); if(brand) sel.value=brand;
-    const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.min='0'; inp.placeholder='0.04'; if(off!==''&&off!=null) inp.value=off;
-    const del=document.createElement('button'); del.className='btn-secondary'; del.innerHTML='🗑️'; del.onclick=()=>row.remove();
-    row.append(sel,inp,del); return row; }
-  function loadDiscounts(el,discs){ el.innerHTML=''; (discs||[]).forEach(d=>el.appendChild(makeDiscRow(d.brand,d.off_eur_per_l))); if(!discs||!discs.length) el.appendChild(makeDiscRow()); }
-  function collectDiscounts(el){ const out=[]; el.querySelectorAll('.disc-row').forEach(r=>{ const b=r.querySelector('select')?.value||''; const off=parseFloat(r.querySelector('input')?.value); if(b&&!isNaN(off)&&off>0) out.push({brand:b,off_eur_per_l:+off}); }); return out; }
+  // CAR helpers
+  function writeMyCarToUI(mc){ if(!mc) return; 
+    if(mc.fuel_type) els.carFuel.value=mc.fuel_type;
+    if(mc.consumption_l_per_100!=null) els.carCons.value=mc.consumption_l_per_100;
+    if(mc.tank_capacity_l!=null) els.carTank.value=mc.tank_capacity_l;
+    if(mc.current_level_l!=null) els.carCurrent.value=mc.current_level_l;
+    if(mc.time_value_eur_per_hour!=null) els.carTimeVal.value=mc.time_value_eur_per_hour;
+    if(mc.max_detour_min!=null) els.carDetour.value=mc.max_detour_min;
+    preselect(els.carPrefBrands, mc.preferred_brands||[]);
+  }
   function readMyCarFromUI(){ return {
     fuel_type:els.carFuel.value||'95', consumption_l_per_100:+els.carCons.value||null, tank_capacity_l:+els.carTank.value||null,
     current_level_l:+els.carCurrent.value||null, time_value_eur_per_hour:+els.carTimeVal.value||0, max_detour_min:+els.carDetour.value||0,
-    preferred_brands:selValues(els.carPrefBrands), discounts:collectDiscounts(els.discList)
+    preferred_brands:selValues(els.carPrefBrands)
   }; }
-  function writeMyCarToUI(mc){ if(!mc) return; if(mc.fuel_type) els.carFuel.value=mc.fuel_type;
-    if(mc.consumption_l_per_100!=null) els.carCons.value=mc.consumption_l_per_100; if(mc.tank_capacity_l!=null) els.carTank.value=mc.tank_capacity_l;
-    if(mc.current_level_l!=null) els.carCurrent.value=mc.current_level_l; if(mc.time_value_eur_per_hour!=null) els.carTimeVal.value=mc.time_value_eur_per_hour;
-    if(mc.max_detour_min!=null) els.carDetour.value=mc.max_detour_min; preselect(els.carPrefBrands, mc.preferred_brands||[]); loadDiscounts(els.discList, mc.discounts||[]); }
-  function applyMyCarToFilters(mc){ if(!mc) mc=loadMyCar(); if(mc.fuel_type) els.fuel.value=mc.fuel_type;
-    if(mc.preferred_brands && mc.preferred_brands.length){ preselect(els.brand, mc.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); } saveState(); }
-  function switchTab(name){ const isStations=(name==='stations'); els.screenStations.classList.toggle('active',isStations);
-    els.screenCar.classList.toggle('active',!isStations); els.tabStations.classList.toggle('active',isStations); els.tabCar.classList.toggle('active',!isStations); }
+  function applyMyCarToFilters(mc){ if(!mc) mc=loadMyCar(); if(mc.fuel_type) { els.fuel.value=mc.fuel_type; els.routeFuel.value=mc.fuel_type; } if(mc.preferred_brands && mc.preferred_brands.length){ preselect(els.brand, mc.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); preselect(els.routeBrands, mc.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); } saveState(); saveRouteState(); }
 
-  // события
+  // Tabs
+  function switchTab(name){
+    const s = name==='stations', r = name==='route', c = name==='car';
+    els.screenStations.classList.toggle('active', s);
+    els.screenRoute.classList.toggle('active', r);
+    els.screenCar.classList.toggle('active', c);
+    els.tabStations.classList.toggle('active', s);
+    els.tabRoute.classList.toggle('active', r);
+    els.tabCar.classList.toggle('active', c);
+  }
+
+  // Events
   els.country.addEventListener('change', ()=> onCountryChange(''));
   els.apply.addEventListener('click', applyFilters);
   els.nearby.addEventListener('click', findNearby);
-  els.send.addEventListener('click', sendToBot);
+  els.send.addEventListener('click', ()=> sendToBot('search'));  // актуальный режим всё равно укажем ниже при действиях
 
-  els.discAdd.addEventListener('click', ()=> els.discList.appendChild(makeDiscRow()));
+  els.routeMyLoc.addEventListener('click', routeUseMyLocation);
+  els.routeGo.addEventListener('click', async ()=>{
+    await routeCalculate();
+  });
+  els.routeSend.addEventListener('click', ()=> sendToBot('route'));
+
   els.carSave.addEventListener('click', ()=>{ const mc=readMyCarFromUI(); saveMyCar(mc); setCarStatus('💾 Профиль сохранен!','ok'); });
   els.carApplyToFilters.addEventListener('click', ()=>{ applyMyCarToFilters(); setCarStatus('🔄 Применено к фильтрам!','ok'); switchTab('stations'); applyFilters(); });
   els.carReset.addEventListener('click', ()=>{ if (confirm('Удалить профиль автомобиля?')) { localStorage.removeItem('fuelMyCar'); writeMyCarToUI({}); setCarStatus('🗑️ Профиль очищен','ok'); }});
-  els.tabStations.addEventListener('click', ()=> switchTab('stations'));
-  els.tabCar.addEventListener('click', ()=> switchTab('car'));
 
-  // init
+  els.tabStations.addEventListener('click', ()=> switchTab('stations'));
+  els.tabRoute.addEventListener('click',    ()=> { switchTab('route'); setRouteFromCarIfAny(); });
+  els.tabCar.addEventListener('click',      ()=> switchTab('car'));
+
+  // Init
   const saved=restoreState(); if(saved.f) els.fuel.value=saved.f; if(saved.l) els.limit.value=saved.l;
-  const mcSaved=loadMyCar(); writeMyCarToUI(mcSaved); if(mcSaved.fuel_type) els.fuel.value=mcSaved.fuel_type;
-  try{ const g=JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null && g.lon!=null) setLastGeo(g.lat,g.lon);}catch{}
+  const mcSaved=loadMyCar(); writeMyCarToUI(mcSaved); if(mcSaved.fuel_type){ els.fuel.value=mcSaved.fuel_type; els.routeFuel.value=mcSaved.fuel_type; }
+  try{ const g=JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null && g.lon!=null){ LAST_GEO=g; setLastGeo(g.lat,g.lon);} }catch{}
   if (tg) { registerFromWebApp(); }
-  loadCountries().then(()=>{ setOptions(els.carPrefBrands, ALL_BRANDS); preselect(els.carPrefBrands, mcSaved.preferred_brands||[]);
-    loadDiscounts(els.discList, mcSaved.discounts||[]); if(mcSaved.preferred_brands&&mcSaved.preferred_brands.length){ preselect(els.brand, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); }
-    else if(saved.brs){ preselect(els.brand, saved.brs); } preselect(els.fresh, saved.frs||[]); applyFilters(); });
+
+  loadCountries().then(()=>{ 
+    // если есть предпочтения — подставим
+    if(mcSaved.preferred_brands && mcSaved.preferred_brands.length){
+      preselect(els.brand, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b)));
+      preselect(els.routeBrands, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b)));
+    } else if(saved.brs){ 
+      preselect(els.brand, saved.brs); 
+      preselect(els.routeBrands, saved.brs); 
+    }
+    preselect(els.fresh, saved.frs||[]);
+    // автопоиск
+    applyFilters();
+  });
 })();
 </script>
 </body>
