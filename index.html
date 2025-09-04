@@ -16,520 +16,103 @@
       --accent: #3b82f6;
       --accent-hover: #2563eb;
       --success: #10b981;
-      --success-hover: #059669;
       --error: #ef4444;
-      --warning: #f59e0b;
       --nearby: linear-gradient(135deg, #10b981 0%, #059669 100%);
       --primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       --secondary: rgba(255, 255, 255, 0.05);
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.3), 0 4px 6px -2px rgba(0,0,0,.2);
     }
-    
     body.tg-dark{ 
       --bg: linear-gradient(135deg, #0a0a1a 0%, #151529 100%);
       --card: rgba(255, 255, 255, 0.06);
       --border: rgba(255, 255, 255, 0.08);
       --muted: #8b92a8;
     }
-
-    * { box-sizing: border-box; }
-    
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
-      font-size: 14px;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    /* Scrollbar styling */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
-
-    a { color: var(--accent); text-decoration: none; transition: color 0.2s ease; }
-    a:hover { color: var(--accent-hover); }
-
-    h1 {
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0 0 24px;
-      background: linear-gradient(135deg, var(--text) 0%, var(--muted) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px 16px 100px;
-    }
-
-    .card {
-      background: var(--card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-      pointer-events: none;
-    }
-
-    .card:hover {
-      background: var(--card-hover);
-      border-color: var(--border-hover);
-      box-shadow: var(--shadow-lg);
-      transform: translateY(-2px);
-    }
-
-    /* Form controls */
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      margin: 0 0 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    select, input, button {
-      width: 100%;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--secondary);
-      color: var(--text);
-      font-size: 14px;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    select:focus, input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    select:disabled, input:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      transition: all 0.2s ease;
-      border: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s ease;
-    }
-
-    button:hover::before {
-      left: 100%;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      box-shadow: var(--shadow);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .btn-nearby {
-      background: var(--nearby);
-      color: white;
-      box-shadow: var(--shadow);
-    }
-
-    .btn-nearby:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .btn-secondary {
-      background: var(--secondary);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--card);
-      border-color: var(--border-hover);
-    }
-
-    .btn-link {
-      background: transparent;
-      color: var(--accent);
-      border: none;
-      padding: 8px 0;
-      text-transform: none;
-      letter-spacing: normal;
-    }
-
-    .btn-link:hover {
-      color: var(--accent-hover);
-    }
-
-    /* Grid layouts */
-    .grid {
-      display: grid;
-      gap: 20px;
-    }
-
-    .grid-stations {
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    }
-
-    .grid-car {
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    }
-
-    .row {
-      display: flex;
-      gap: 16px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-
-    .row > * {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    /* Status messages */
-    .status {
-      margin-top: 16px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-weight: 500;
-      min-height: 20px;
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      background: var(--secondary);
-    }
-
-    .status.ok {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: var(--success);
-      color: var(--success);
-    }
-
-    .status.err {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: var(--error);
-      color: var(--error);
-    }
-
-    /* List items */
-    .list {
-      margin-top: 24px;
-      display: grid;
-      gap: 16px;
-    }
-
-    .item {
-      background: var(--card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .item::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--success));
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-    }
-
-    .item:hover {
-      background: var(--card-hover);
-      border-color: var(--border-hover);
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .item:hover::before {
-      transform: scaleX(1);
-    }
-
-    .item-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text);
-    }
-
-    .item-price {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--success);
-      text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-    }
-
-    .item-info {
-      color: var(--muted);
-      margin: 8px 0;
-      font-size: 13px;
-    }
-
-    /* Links with icons */
-    .links {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .icon-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: var(--secondary);
-      border: 1px solid var(--border);
-      transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    .icon-btn:hover {
-      background: var(--card);
-      border-color: var(--border-hover);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow);
-    }
-
-    .icon-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    /* Pills and chips */
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      background: var(--secondary);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 500;
-      backdrop-filter: blur(10px);
-    }
-
-    .geo-chip {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: var(--success);
-      color: var(--success);
-    }
-
-    /* Discounts section */
-    .discounts {
-      display: grid;
-      gap: 12px;
-    }
-
-    .disc-row {
-      display: grid;
-      grid-template-columns: 1fr 140px 50px;
-      gap: 12px;
-      align-items: end;
-    }
-
-    .disc-row button {
-      width: 50px;
-      height: 50px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-
-    /* Tab bar */
-    .tabbar {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: var(--card);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border);
-      display: flex;
-      z-index: 100;
-      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    .tab-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      padding: 16px 8px;
-      color: var(--muted);
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.2s ease;
-      position: relative;
-    }
-
-    .tab-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 20%;
-      right: 20%;
-      height: 3px;
-      background: var(--accent);
-      border-radius: 0 0 3px 3px;
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-    }
-
-    .tab-btn.active {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .tab-btn.active::before {
-      transform: scaleX(1);
-    }
-
-    .tab-icon {
-      font-size: 24px;
-      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
-    }
-
-    .tab-btn.active .tab-icon {
-      filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
-    }
-
-    /* Screen transitions */
-    .screen {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.3s ease;
-      display: none;
-    }
-
-    .screen.active {
-      opacity: 1;
-      transform: translateY(0);
-      display: block;
-    }
-
-    /* Hints and helpers */
-    .hint {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 6px;
-      font-style: italic;
-    }
-
-    .footer {
-      margin: 32px 0 120px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      line-height: 1.6;
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-      .wrap { padding: 16px 12px 100px; }
-      .card { padding: 20px; }
-      .grid-stations { grid-template-columns: 1fr; }
-      .grid-car { grid-template-columns: 1fr; }
-      .row { flex-direction: column; }
-      .row > * { min-width: unset; }
-      .disc-row { grid-template-columns: 1fr 100px 44px; }
-      h1 { font-size: 24px; }
-    }
-
-    @media (max-width: 480px) {
-      .wrap { padding: 12px 8px 100px; }
-      .card { padding: 16px; }
-      .disc-row { grid-template-columns: 1fr 80px 40px; }
-    }
-
-    /* Loading animation */
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .loading {
-      animation: pulse 2s infinite;
-    }
-
-    /* Modern glass morphism effects */
-    .glass {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Micro-interactions */
-    .interactive {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .interactive:hover {
-      transform: scale(1.02);
-    }
-
-    .interactive:active {
-      transform: scale(0.98);
-    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Inter',sans-serif;
+      font-size:14px;line-height:1.6;min-height:100vh;
+    }
+    a{color:var(--accent);text-decoration:none;transition:color .2s}
+    a:hover{color:var(--accent-hover)}
+    h1{font-size:28px;font-weight:700;margin:0 0 24px;
+      background:linear-gradient(135deg,var(--text) 0%,var(--muted) 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px 16px 100px}
+    .card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);
+      border-radius:20px;padding:24px;box-shadow:var(--shadow);transition:all .3s;position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent)}
+    .card:hover{background:var(--card-hover);border-color:var(--border-hover);box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+    label{display:block;font-size:13px;font-weight:600;color:var(--text);margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}
+    select,input,button{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);
+      background:var(--secondary);color:var(--text);font-size:14px;transition:all .2s;backdrop-filter:blur(10px)}
+    select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1);background:rgba(255,255,255,.08)}
+    select:disabled,input:disabled{opacity:.5;cursor:not-allowed}
+    button{cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border:none;position:relative;overflow:hidden}
+    button::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .5s}
+    button:hover::before{left:100%}
+    .btn-primary{background:var(--primary);color:#fff;box-shadow:var(--shadow)}
+    .btn-nearby{background:var(--nearby);color:#fff;box-shadow:var(--shadow)}
+    .btn-secondary{background:var(--secondary);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--card);border-color:var(--border-hover)}
+    .btn-link{background:transparent;color:var(--accent);border:none;padding:8px 0;text-transform:none;letter-spacing:normal}
+    .grid{display:grid;gap:20px}
+    .grid-stations{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+    .grid-car{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+    .row{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap}
+    .row>*{flex:1;min-width:200px}
+    .status{margin-top:16px;padding:12px 16px;border-radius:12px;font-weight:500;min-height:20px;
+      backdrop-filter:blur(10px);border:1px solid var(--border);background:var(--secondary)}
+    .status.ok{background:rgba(16,185,129,.1);border-color:#10b981;color:#10b981}
+    .status.err{background:rgba(239,68,68,.1);border-color:#ef4444;color:#ef4444}
+    .list{margin-top:24px;display:grid;gap:16px}
+    .item{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);
+      border-radius:16px;padding:20px;transition:all .3s;position:relative;overflow:hidden}
+    .item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,var(--accent),#10b981);transform:scaleX(0);transition:transform .3s}
+    .item:hover{background:var(--card-hover);border-color:var(--border-hover);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+    .item:hover::before{transform:scaleX(1)}
+    .item-title{font-size:18px;font-weight:700;margin-bottom:8px}
+    .item-price{font-size:20px;font-weight:800;color:#10b981;text-shadow:0 0 10px rgba(16,185,129,.3)}
+    .item-info{color:var(--muted);margin:8px 0;font-size:13px}
+    .links{display:flex;gap:12px;margin-top:16px}
+    .icon-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;
+      background:var(--secondary);border:1px solid var(--border);transition:all .2s;backdrop-filter:blur(10px)}
+    .icon-btn:hover{background:var(--card);border-color:var(--border-hover);transform:translateY(-2px);box-shadow:var(--shadow)}
+    .icon-btn img{width:22px;height:22px;object-fit:contain;display:block}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--secondary);
+      border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:500;backdrop-filter:blur(10px)}
+    .geo-chip{background:rgba(16,185,129,.1);border-color:#10b981;color:#10b981}
+    .discounts{display:grid;gap:12px}
+    .disc-row{display:grid;grid-template-columns:1fr 140px 50px;gap:12px;align-items:end}
+    .disc-row button{width:50px;height:50px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);backdrop-filter:blur(20px);
+      border-top:1px solid var(--border);display:flex;z-index:100;box-shadow:0 -4px 6px -1px rgba(0,0,0,.1)}
+    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;color:var(--muted);
+      cursor:pointer;user-select:none;transition:all .2s;position:relative}
+    .tab-btn::before{content:'';position:absolute;top:0;left:20%;right:20%;height:3px;background:var(--accent);
+      border-radius:0 0 3px 3px;transform:scaleX(0);transition:transform .3s}
+    .tab-btn.active{color:var(--text);font-weight:600}
+    .tab-btn.active::before{transform:scaleX(1)}
+    .tab-icon{font-size:24px}
+    .screen{opacity:0;transform:translateY(20px);transition:all .3s;display:none}
+    .screen.active{opacity:1;transform:translateY(0);display:block}
+    .hint{color:var(--muted);font-size:12px;margin-top:6px;font-style:italic}
+    .footer{margin:32px 0 120px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+    @media (max-width:768px){
+      .wrap{padding:16px 12px 100px}.card{padding:20px}
+      .grid-stations{grid-template-columns:1fr}.grid-car{grid-template-columns:1fr}
+      .row{flex-direction:column}.row>*{min-width:unset}.disc-row{grid-template-columns:1fr 100px 44px}
+      h1{font-size:24px}
+    }
+    @media (max-width:480px){
+      .wrap{padding:12px 8px 100px}.card{padding:16px}.disc-row{grid-template-columns:1fr 80px 40px}
+    }
+    .loading{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -582,9 +165,9 @@
       </div>
 
       <div class="row">
-        <button id="apply" class="btn-primary interactive">🔍 Показать</button>
-        <button id="nearby" class="btn-nearby interactive">📍 Найти рядом</button>
-        <button id="send" class="btn-secondary interactive">📤 Отправить в чат</button>
+        <button id="apply"  class="btn-primary">🔍 Показать</button>
+        <button id="nearby" class="btn-nearby">📍 Найти рядом</button>
+        <button id="send"   class="btn-secondary">📤 Отправить в чат</button>
       </div>
 
       <div class="row" id="geoRow" style="display:none">
@@ -596,7 +179,7 @@
 
     <div id="list" class="list"></div>
     <div class="footer">
-      💡 Данные обновляются в реальном времени. В Telegram кнопка «Отправить в чат» передаст выбранные фильтры боту для быстрого повтора поиска.
+      💡 В Telegram «Отправить в чат» передаст выбранные фильтры боту.
     </div>
   </div>
 
@@ -624,7 +207,6 @@
         <div>
           <label for="car_current">📊 Сейчас в баке (л)</label>
           <input id="car_current" type="number" step="1" min="0" placeholder="например, 15">
-          <div class="hint">Для расчета достижимости и выгодности объезда</div>
         </div>
         <div>
           <label for="car_time_value">💰 Цена времени (€/час)</label>
@@ -636,26 +218,24 @@
         </div>
       </div>
 
-      <div style="margin-top: 24px">
+      <div style="margin-top:24px">
         <label for="car_pref_brands">⭐ Предпочитаемые бренды</label>
         <select id="car_pref_brands" multiple size="6" style="height:140px"></select>
         <div class="hint">Автоматически применяются при поиске станций</div>
       </div>
 
-      <div style="margin-top: 24px">
+      <div style="margin-top:24px">
         <label>💳 Скидки по брендам (€/л)</label>
         <div id="discList" class="discounts"></div>
-        <div class="row" style="margin-top: 12px">
-          <button id="discAdd" class="btn-secondary interactive" style="max-width: 240px">➕ Добавить скидку</button>
-          <div class="hint" style="align-self: center; margin-top: 0;">
-            Укажите скидку в евро за литр (например, 0.04 = 4 цента)
-          </div>
+        <div class="row" style="margin-top:12px">
+          <button id="discAdd" class="btn-secondary" style="max-width:240px">➕ Добавить скидку</button>
+          <div class="hint" style="align-self:center;margin-top:0;">Например, 0.04 = 4 цента</div>
         </div>
       </div>
 
-      <div class="row" style="margin-top: 24px">
-        <button id="carSave" class="btn-primary interactive">💾 Сохранить</button>
-        <button id="carApplyToFilters" class="btn-nearby interactive">🔄 Применить к фильтрам</button>
+      <div class="row" style="margin-top:24px">
+        <button id="carSave" class="btn-primary">💾 Сохранить</button>
+        <button id="carApplyToFilters" class="btn-nearby">🔄 Применить к фильтрам</button>
         <button id="carReset" class="btn-link">🗑️ Сбросить профиль</button>
       </div>
 
@@ -664,53 +244,30 @@
   </div>
 </div>
 
+<!-- таббар -->
 <div class="tabbar">
-  <div id="tabStations" class="tab-btn active">
-    <div class="tab-icon">⛽</div>
-    <div>Станции</div>
-  </div>
-  <div id="tabCar" class="tab-btn">
-    <div class="tab-icon">🚗</div>
-    <div>Мой авто</div>
-  </div>
+  <div id="tabStations" class="tab-btn active"><div class="tab-icon">⛽</div><div>Станции</div></div>
+  <div id="tabCar" class="tab-btn"><div class="tab-icon">🚗</div><div>Мой авто</div></div>
 </div>
 
 <script>
 (() => {
   const API_BASE = "https://et14k9zlk8.execute-api.eu-north-1.amazonaws.com";
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-  if (tg) { 
-    try { 
-      tg.ready(); 
-      tg.expand(); 
-      if (tg.colorScheme === 'dark') document.body.classList.add('tg-dark'); 
-    } catch {} 
-  }
+  if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme === 'dark') document.body.classList.add('tg-dark'); } catch{} }
 
-  // Modern SVG icons
-  const ICONS = {
-    maps: `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path>
-        <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"></path>
-      </svg>`,
-    waze: `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 21a9 9 0 1 0 0 -18a9 9 0 0 0 0 18z"></path>
-        <path d="M9 10h.01"></path>
-        <path d="M15 10h.01"></path>
-        <path d="M9.5 15s.5 -1 2.5 -1s2.5 1 2.5 1"></path>
-      </svg>`
+  // Пути к картинкам-логотипам (положи файлы в репо)
+  const ASSETS = {
+    maps: "maps.png", // Google_Maps_icon
+    waze: "waze.jpg"  // Waze-App-Icon
   };
 
-  // Registration function
   async function registerFromWebApp(){
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
     const u = tg.initDataUnsafe.user;
     try {
       await fetch(`${API_BASE}/user/register`, {
-        method:'POST', 
-        headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           source:'telegram_webapp',
           platform_user_id:String(u.id),
@@ -723,7 +280,6 @@
     } catch(e) {}
   }
 
-  // Elements
   const els = {
     country:$('#country'), city:$('#city'), brand:$('#brand'), fuel:$('#fuel'),
     fresh:$('#fresh'), limit:$('#limit'), apply:$('#apply'), nearby:$('#nearby'),
@@ -735,235 +291,118 @@
     carSave:$('#carSave'), carApplyToFilters:$('#carApplyToFilters'), carReset:$('#carReset'),
     carStatus:$('#carStatus'),
     screenStations:$('#screen-stations'), screenCar:$('#screen-car'),
-    tabStations:$('#tabStations'), tabCar:$('#tabCar'),
+    tabStations:$('#tabStations'), tabCar:$('#tabCar')
   };
-
   function $(id){ return document.getElementById(id.replace(/^#/,'')); }
 
-  // Utility functions
-  async function fetchJSON(url){ 
-    const r = await fetch(url, {mode:'cors'}); 
-    if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); 
-    return r.json(); 
-  }
-  
-  function setStatus(m, c = '') { 
-    els.status.textContent = m; 
-    els.status.className = 'status ' + (c || ''); 
-  }
-  
-  function setCarStatus(m, c = '') { 
-    els.carStatus.textContent = m; 
-    els.carStatus.className = 'status ' + (c || ''); 
-  }
-  
-  function selValues(selectEl) { 
-    return Array.from(selectEl.selectedOptions).map(o => o.value).filter(Boolean); 
-  }
-  
-  function setOptions(selectEl, options) {
-    selectEl.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
-  }
-  
-  function preselect(selectEl, values) { 
-    const set = new Set(values || []); 
-    Array.from(selectEl.options).forEach(o => o.selected = set.has(o.value)); 
-  }
-  
-  function setLastGeo(lat, lon) { 
-    if(lat == null || lon == null) { 
-      els.geoRow.style.display = 'none'; 
-      return;
-    } 
-    els.geoRow.style.display = 'flex'; 
-    els.lastGeo.innerHTML = `📍 Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; 
-  }
+  async function fetchJSON(url){ const r=await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
+  function setStatus(m,c=''){ els.status.textContent=m; els.status.className='status '+(c||''); }
+  function setCarStatus(m,c=''){ els.carStatus.textContent=m; els.carStatus.className='status '+(c||''); }
+  function selValues(s){ return Array.from(s.selectedOptions).map(o=>o.value).filter(Boolean); }
+  function setOptions(s, opts){ s.innerHTML = opts.map(o=>`<option value="${o}">${o}</option>`).join(''); }
+  function preselect(s, vals){ const set=new Set(vals||[]); Array.from(s.options).forEach(o=>o.selected=set.has(o.value)); }
+  function setLastGeo(lat,lon){ if(lat==null||lon==null){ els.geoRow.style.display='none'; return;} els.geoRow.style.display='flex'; els.lastGeo.innerHTML=`📍 Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
 
-  // State management
-  function saveState(){
-    localStorage.setItem('fuelFinderState', JSON.stringify({
-      c: els.country.value, ci: els.city.value, brs: selValues(els.brand),
-      f: els.fuel.value, l: els.limit.value, frs: selValues(els.fresh)
-    }));
-  }
-  
-  function restoreState(){
-    try{ 
-      const s = JSON.parse(localStorage.getItem('fuelFinderState') || '{}'); 
-      if(!s.frs && s.fr) s.frs = [s.fr];
-      return s; 
-    } catch { 
-      return {}; 
-    }
-  }
-  
-  function saveMyCar(mc){ 
-    localStorage.setItem('fuelMyCar', JSON.stringify(mc)); 
-  }
-  
-  function loadMyCar(){ 
-    try{ 
-      return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); 
-    } catch {
-      return {};
-    } 
-  }
+  function saveState(){ localStorage.setItem('fuelFinderState', JSON.stringify({
+    c:els.country.value, ci:els.city.value, brs:selValues(els.brand), f:els.fuel.value, l:els.limit.value, frs:selValues(els.fresh)
+  })); }
+  function restoreState(){ try{ const s=JSON.parse(localStorage.getItem('fuelFinderState')||'{}'); if(!s.frs&&s.fr)s.frs=[s.fr]; return s; }catch{return{}}}
+  function saveMyCar(mc){ localStorage.setItem('fuelMyCar', JSON.stringify(mc)); }
+  function loadMyCar(){ try{ return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); }catch{return{}} }
 
-  // Meta data loading
   let ALL_BRANDS = [];
-  
   async function loadCountries(){
-    setStatus('🔄 Загружаю данные...'); 
-    els.country.disabled = true; 
-    els.country.innerHTML = `<option>Загрузка...</option>`;
-    els.country.classList.add('loading');
-    
+    setStatus('🔄 Загружаю данные…'); els.country.disabled=true; els.country.innerHTML=`<option>Загрузка…</option>`; els.country.classList.add('loading');
     try{
-      const j = await fetchJSON(`${API_BASE}/meta`);
-      const countries = j.countries || [];
-      ALL_BRANDS = j.brands || [];
+      const j=await fetchJSON(`${API_BASE}/meta`);
+      const countries=j.countries||[]; ALL_BRANDS=j.brands||[];
       setOptions(els.country, countries);
       fillBrands(ALL_BRANDS, restoreState().brs||[]);
       setOptions(els.carPrefBrands, ALL_BRANDS);
-      preselect(els.carPrefBrands, loadMyCar().preferred_brands || []);
-
-      const saved = restoreState();
-      if (saved.c && countries.includes(saved.c)) els.country.value = saved.c;
-      await onCountryChange(saved.ci, saved.brs || []);
-      preselect(els.fresh, saved.frs || []);
+      preselect(els.carPrefBrands, loadMyCar().preferred_brands||[]);
+      const saved=restoreState();
+      if(saved.c && countries.includes(saved.c)) els.country.value=saved.c;
+      await onCountryChange(saved.ci, saved.brs||[]);
+      preselect(els.fresh, saved.frs||[]);
       setStatus('✅ Готов к поиску');
-    } catch(e) { 
-      console.error(e); 
-      setStatus('❌ Ошибка загрузки данных', 'err'); 
-      els.country.innerHTML = `<option>Ошибка</option>`; 
-    } finally { 
-      els.country.disabled = false; 
-      els.country.classList.remove('loading');
-    }
+    }catch(e){ console.error(e); setStatus('❌ Ошибка загрузки данных','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
+    finally{ els.country.disabled=false; els.country.classList.remove('loading'); }
   }
-  
-  function fillBrands(brands, preselectVals){
-    els.brand.innerHTML = (brands||[]).map(b => `<option value="${b}">${b}</option>`).join('');
-    preselect(els.brand, preselectVals||[]);
-  }
-
-  async function onCountryChange(prefCity, prefBrands){
-    const c = els.country.value; 
-    setStatus('🔄 Загружаю города...'); 
-    els.city.disabled = true; 
-    els.brand.disabled = true;
-    els.city.classList.add('loading');
-    
+  function fillBrands(brands, preVals){ els.brand.innerHTML=(brands||[]).map(b=>`<option value="${b}">${b}</option>`).join(''); preselect(els.brand, preVals||[]); }
+  async function onCountryChange(prefCity){
+    const c=els.country.value; setStatus('🔄 Загружаю города…'); els.city.disabled=true; els.brand.disabled=true; els.city.classList.add('loading');
     try{
-      const j = await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`);
-      const cities = j.cities || [];
-      els.city.innerHTML = `<option value="">Все города</option>` + cities.map(ci=>`<option>${ci}</option>`).join('');
-      if (prefCity && cities.includes(prefCity)) els.city.value = prefCity;
+      const j=await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`);
+      const cities=j.cities||[];
+      els.city.innerHTML=`<option value="">Все города</option>`+cities.map(ci=>`<option>${ci}</option>`).join('');
+      if(prefCity && cities.includes(prefCity)) els.city.value=prefCity;
       setStatus('✅ Готов к поиску');
-    } catch(e) { 
-      console.error(e); 
-      setStatus('❌ Ошибка загрузки городов', 'err'); 
-      els.city.innerHTML = `<option>Ошибка</option>`; 
-    } finally { 
-      els.city.disabled = false; 
-      els.brand.disabled = false; 
-      els.city.classList.remove('loading');
-    }
+    }catch(e){ console.error(e); setStatus('❌ Ошибка загрузки городов','err'); els.city.innerHTML=`<option>Ошибка</option>`; }
+    finally{ els.city.disabled=false; els.brand.disabled=false; els.city.classList.remove('loading'); }
   }
 
-  // Freshness translation functions
-  function _norm(s){ 
-    if(!s) return ''; 
-    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); 
-  }
-  
+  function _norm(s){ if(!s) return ''; return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
   function translateFreshLabel(raw){
-    if (!raw) return '';
-    const n = _norm(raw);
-    if (['sodien','siandien','tana','tana.','sodien.','siandien.','šodien'].includes(n)) return 'Сегодня';
-    if (['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
-    if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
-    if (/\d/.test(raw)) return raw;
-    return raw;
+    if(!raw) return ''; const n=_norm(raw);
+    if(['sodien','siandien','tana','tana.','sodien.','siandien.','šodien'].includes(n)) return 'Сегодня';
+    if(['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
+    if(['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
+    if(/\d/.test(raw)) return raw; return raw;
   }
-  
   function classifyFresh(it){
-    const raw = (it.fresh_label||'').trim(), n = _norm(raw);
-    if (['sodien','siandien','tana','šodien'].includes(n)) return 'today';
-    if (['vakar','eile'].includes(n)) return 'yesterday';
-    if (['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'daybefore';
-    if (it.fresh_days === 0) return 'today';
-    if (it.fresh_days === 1) return 'yesterday';
-    if (it.fresh_days === 2) return 'daybefore';
+    const raw=(it.fresh_label||'').trim(), n=_norm(raw);
+    if(['sodien','siandien','tana','šodien'].includes(n)) return 'today';
+    if(['vakar','eile'].includes(n)) return 'yesterday';
+    if(['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'daybefore';
+    if(it.fresh_days===0) return 'today';
+    if(it.fresh_days===1) return 'yesterday';
+    if(it.fresh_days===2) return 'daybefore';
     return 'other';
   }
-  
-  function passesFreshFilter(it, wantArr){
-    if (!wantArr || wantArr.length === 0) return true;
-    return wantArr.includes(classifyFresh(it));
+  function passesFreshFilter(it, want){ if(!want||!want.length) return true; return want.includes(classifyFresh(it)); }
+
+  async function applyFilters(){
+    setStatus('🔍 Ищу станции…'); els.list.innerHTML='';
+    const brands=selValues(els.brand), wantFresh=selValues(els.fresh);
+    const qs=new URLSearchParams({country:els.country.value||'', city:els.city.value||'', brands:brands.join(','), fuel:els.fuel.value||'95', limit:els.limit.value||50});
+    try{
+      const j=await fetchJSON(`${API_BASE}/search?`+qs.toString());
+      const items=(j.items||[]).filter(it=>passesFreshFilter(it, wantFresh));
+      setStatus(`✅ Найдено: ${items.length}`);
+      renderList(items); saveState();
+    }catch(e){ console.error(e); setStatus('❌ Ошибка поиска','err'); els.list.innerHTML=`<div class="item"><span style="color:#ef4444">${String(e).slice(0,200)}</span></div>`; }
   }
 
-  // Search functionality
-  async function applyFilters(){
-    setStatus('🔍 Ищу станции...'); 
-    els.list.innerHTML = '';
-    const brands = selValues(els.brand);
-    const wantFresh = selValues(els.fresh);
-    const qs = new URLSearchParams({
-      country: els.country.value || '', 
-      city: els.city.value || '',
-      brands: brands.join(','), 
-      fuel: els.fuel.value || '95',
-      limit: els.limit.value || 50,
-    });
-    
-    try{
-      const j = await fetchJSON(`${API_BASE}/search?`+qs.toString());
-      const items = (j.items||[]).filter(it => passesFreshFilter(it, wantFresh));
-      setStatus(`✅ Найдено станций: ${items.length}`);
-      renderList(items);
-      saveState();
-    } catch(e) {
-      console.error(e);
-      setStatus('❌ Ошибка поиска', 'err');
-      els.list.innerHTML = `<div class="item"><span style="color: var(--error)">Ошибка: ${String(e).slice(0,200)}</span></div>`;
+  function gmapsDir(it){
+    if(it.lat!=null && it.lon!=null){
+      return `https://www.google.com/maps/dir/?api=1&destination=${it.lat},${it.lon}&travelmode=driving`;
     }
+    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
+    return `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
+  }
+  function wazeNav(it){
+    if(it.lat!=null && it.lon!=null) return `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`;
+    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
+    return `https://waze.com/ul?q=${q}&navigate=yes`;
   }
 
   function renderList(items){
-    if(!items.length){ 
-      els.list.innerHTML = '<div class="item"><div style="color: var(--muted); text-align: center; padding: 20px;">🔍 Станции не найдены<br><small>Попробуйте изменить фильтры</small></div></div>'; 
-      return;
-    }
-    
+    if(!items.length){ els.list.innerHTML='<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">🔍 Станции не найдены</div></div>'; return; }
     els.list.innerHTML = items.map((it,i)=>{
-      const price = it.price != null ? Number(it.price).toFixed(3) : '—';
-      const freshTxt = translateFreshLabel(it.fresh_label) || 
-        (it.fresh_days != null ? 
-          (it.fresh_days === 0 ? 'Сегодня' : 
-           it.fresh_days === 1 ? 'Вчера' : 
-           it.fresh_days === 2 ? 'Позавчера' : `${it.fresh_days} дн. назад`) 
-          : '');
-      const updated = freshTxt ? ` • 📅 ${freshTxt}` : '';
-      const info = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + updated;
-
-      const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
-      const gmaps = `https://maps.google.com/?q=${q}`;
-      const waze = (it.lat != null && it.lon != null)
-        ? `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`
-        : `https://waze.com/ul?q=${q}&navigate=yes`;
-
-      return `<div class="item interactive">
+      const price = it.price!=null ? Number(it.price).toFixed(3) : '—';
+      const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} дн. назад`) : '');
+      const info = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + (freshTxt?` • 📅 ${freshTxt}`:'');
+      return `<div class="item">
         <div class="item-title">${i+1}. ${it.name}</div>
         <div class="item-price">${price} €/л</div>
         <div class="item-info">${info}</div>
         <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
         <div class="links">
-          <a class="icon-btn maps" href="${gmaps}" target="_blank" rel="noopener" aria-label="Открыть в Google Maps" title="Открыть в Google Maps">
-            ${ICONS.maps}
+          <a class="icon-btn maps" href="${gmapsDir(it)}" target="_blank" rel="noopener" aria-label="Открыть маршрут в Google Maps" title="Открыть маршрут в Google Maps">
+            <img src="${ASSETS.maps}" alt="Google Maps">
           </a>
-          <a class="icon-btn waze" href="${waze}" target="_blank" rel="noopener" aria-label="Открыть в Waze" title="Открыть в Waze">
-            ${ICONS.waze}
+          <a class="icon-btn waze" href="${wazeNav(it)}" target="_blank" rel="noopener" aria-label="Открыть маршрут в Waze" title="Открыть маршрут в Waze">
+            <img src="${ASSETS.waze}" alt="Waze">
           </a>
         </div>
       </div>`;
@@ -971,80 +410,44 @@
   }
 
   async function findNearby(){
-    if(!navigator.geolocation){ 
-      setStatus('❌ Геолокация не поддерживается', 'err'); 
-      return; 
-    }
-    
-    const brands = selValues(els.brand);
-    const wantFresh = selValues(els.fresh);
-    setStatus('📍 Получаю местоположение...');
-    
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const {latitude, longitude} = pos.coords; 
-      setStatus('🔍 Ищу ближайшие станции...');
-      
-      const qs = new URLSearchParams({
-        lat: latitude, 
-        lon: longitude,
-        brands: brands.join(','), 
-        fuel: els.fuel.value || '95',
-        limit: els.limit.value || 50, 
-        routing: 'drive'
-      });
-      
+    if(!navigator.geolocation){ setStatus('❌ Геолокация не поддерживается','err'); return; }
+    const brands=selValues(els.brand), wantFresh=selValues(els.fresh);
+    setStatus('📍 Получаю местоположение…');
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const {latitude,longitude}=pos.coords; setStatus('🔍 Ищу ближайшие…');
+      const qs=new URLSearchParams({lat:latitude, lon:longitude, brands:brands.join(','), fuel:els.fuel.value||'95', limit:els.limit.value||50, routing:'drive'});
       try{
-        const j = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
-        const items = (j.items||[]).filter(it => passesFreshFilter(it, wantFresh));
-        setStatus(`✅ Найдено рядом: ${items.length} станций`);
+        const j=await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
+        const items=(j.items||[]).filter(it=>passesFreshFilter(it, wantFresh));
+        setStatus(`✅ Найдено рядом: ${items.length}`);
         renderListWithDistance(items);
-        localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat: latitude, lon: longitude}));
+        localStorage.setItem('fuelFinderLastGeo', JSON.stringify({lat:latitude, lon:longitude}));
         setLastGeo(latitude, longitude);
-      } catch(e) { 
-        console.error(e); 
-        setStatus('❌ Ошибка поиска рядом', 'err'); 
-      }
-    }, err => setStatus('❌ Не удалось получить геолокацию: ' + err.message, 'err'),
-       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+      }catch(e){ console.error(e); setStatus('❌ Ошибка поиска рядом','err'); }
+    }, err=> setStatus('❌ Не удалось получить геолокацию: '+err.message,'err'), {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
   }
 
   function renderListWithDistance(items){
-    if(!items.length){ 
-      els.list.innerHTML = '<div class="item"><div style="color: var(--muted); text-align: center; padding: 20px;">📍 Рядом станций не найдено<br><small>Попробуйте увеличить радиус поиска</small></div></div>'; 
-      return;
-    }
-    
+    if(!items.length){ els.list.innerHTML='<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">📍 Рядом станций не найдено</div></div>'; return; }
     els.list.innerHTML = items.map((it,i)=>{
-      const price = it.price != null ? Number(it.price).toFixed(3) : '—';
-      const freshTxt = translateFreshLabel(it.fresh_label) || 
-        (it.fresh_days != null ? 
-          (it.fresh_days === 0 ? 'Сегодня' : 
-           it.fresh_days === 1 ? 'Вчера' : 
-           it.fresh_days === 2 ? 'Позавчера' : `${it.fresh_days} дн. назад`) 
-          : '');
-      const upd = freshTxt ? ` • 📅 ${freshTxt}` : '';
+      const price = it.price!=null ? Number(it.price).toFixed(3) : '—';
+      const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} дн. назад`) : '');
+      const straight = (it.distance_km!=null)?` • 📏 ${Number(it.distance_km).toFixed(1)} км`:'';
+      const road = (it.drive_distance_km!=null||it.drive_duration_min!=null)
+        ? ` • 🛣️ ${it.drive_distance_km!=null?Number(it.drive_distance_km).toFixed(1)+' км':'—'}${it.drive_duration_min!=null?', '+Number(it.drive_duration_min).toFixed(0)+' мин':''}`:'';
+      const head = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + (freshTxt?` • 📅 ${freshTxt}`:'') + straight + road;
 
-      const straight = (it.distance_km != null) ? ` • 📏 ${Number(it.distance_km).toFixed(1)} км` : '';
-      const road = (it.drive_distance_km != null || it.drive_duration_min != null)
-        ? ` • 🛣️ ${it.drive_distance_km != null ? Number(it.drive_distance_km).toFixed(1) + ' км' : '—'}${it.drive_duration_min != null ? ', ' + Number(it.drive_duration_min).toFixed(0) + ' мин' : ''}`
-        : '';
-      const head = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + upd + straight + road;
-
-      const q = encodeURIComponent(`${it.name} ${it.address||''} ${it.city||''} ${it.country||''}`);
-      const gmaps = `https://maps.google.com/?q=${q}`;
-      const waze = `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`;
-
-      return `<div class="item interactive">
+      return `<div class="item">
         <div class="item-title">${i+1}. ${it.name}</div>
         <div class="item-price">${price} €/л</div>
         <div class="item-info">${head}</div>
         <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
         <div class="links">
-          <a class="icon-btn maps" href="${gmaps}" target="_blank" rel="noopener" aria-label="Открыть в Google Maps" title="Открыть в Google Maps">
-            ${ICONS.maps}
+          <a class="icon-btn maps" href="${gmapsDir(it)}" target="_blank" rel="noopener" aria-label="Маршрут в Google Maps" title="Маршрут в Google Maps">
+            <img src="${ASSETS.maps}" alt="Google Maps">
           </a>
-          <a class="icon-btn waze" href="${waze}" target="_blank" rel="noopener" aria-label="Открыть в Waze" title="Открыть в Waze">
-            ${ICONS.waze}
+          <a class="icon-btn waze" href="${wazeNav(it)}" target="_blank" rel="noopener" aria-label="Маршрут в Waze" title="Маршрут в Waze">
+            <img src="${ASSETS.waze}" alt="Waze">
           </a>
         </div>
       </div>`;
@@ -1052,174 +455,60 @@
   }
 
   function sendToBot(){
-    if(!tg || !tg.sendData){ 
-      setStatus('❌ Откройте через Telegram для отправки', 'err'); 
-      return; 
-    }
-    
-    const payload = {
-      country: els.country.value || '', 
-      city: els.city.value || '',
-      brands: selValues(els.brand), 
-      fuel: (els.fuel.value || '95').toLowerCase(),
-      fresh: selValues(els.fresh)
-    };
-    
-    try{ 
-      tg.sendData(JSON.stringify(payload)); 
-      setStatus('✅ Отправлено в чат!', 'ok'); 
-    } catch(e) { 
-      setStatus('❌ Не удалось отправить', 'err'); 
-    }
+    if(!tg || !tg.sendData){ setStatus('❌ Откройте через Telegram для отправки','err'); return; }
+    const payload={ country:els.country.value||'', city:els.city.value||'', brands:selValues(els.brand),
+                    fuel:(els.fuel.value||'95').toLowerCase(), fresh:selValues(els.fresh) };
+    try{ tg.sendData(JSON.stringify(payload)); setStatus('✅ Отправлено в чат!','ok'); }catch(e){ setStatus('❌ Не удалось отправить','err'); }
   }
 
-  // Car profile management
-  function makeDiscRow(brand = '', off = ''){
-    const row = document.createElement('div');
-    row.className = 'disc-row';
-    
-    const sel = document.createElement('select'); 
-    sel.innerHTML = (ALL_BRANDS||[]).map(b => `<option>${b}</option>`).join('');
-    if (brand) sel.value = brand;
-    
-    const inp = document.createElement('input'); 
-    inp.type = 'number'; 
-    inp.step = '0.01'; 
-    inp.min = '0'; 
-    inp.placeholder = '0.04';
-    if (off !== '' && off != null) inp.value = off;
-    
-    const del = document.createElement('button'); 
-    del.className = 'btn-secondary'; 
-    del.innerHTML = '🗑️'; 
-    del.title = 'Удалить скидку';
-    del.onclick = () => row.remove();
-    
-    row.appendChild(sel); 
-    row.appendChild(inp); 
-    row.appendChild(del);
-    return row;
+  // скидки/профиль
+  function makeDiscRow(brand='',off=''){
+    const row=document.createElement('div'); row.className='disc-row';
+    const sel=document.createElement('select'); sel.innerHTML=(ALL_BRANDS||[]).map(b=>`<option>${b}</option>`).join(''); if(brand) sel.value=brand;
+    const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.min='0'; inp.placeholder='0.04'; if(off!==''&&off!=null) inp.value=off;
+    const del=document.createElement('button'); del.className='btn-secondary'; del.innerHTML='🗑️'; del.title='Удалить скидку'; del.onclick=()=>row.remove();
+    row.append(sel,inp,del); return row;
   }
-  
-  function loadDiscounts(listEl, discounts){
-    listEl.innerHTML = '';
-    (discounts||[]).forEach(d => listEl.appendChild(makeDiscRow(d.brand, d.off_eur_per_l)));
-    if (!discounts || discounts.length === 0) listEl.appendChild(makeDiscRow());
+  function loadDiscounts(el,discs){ el.innerHTML=''; (discs||[]).forEach(d=>el.appendChild(makeDiscRow(d.brand,d.off_eur_per_l))); if(!discs||!discs.length) el.appendChild(makeDiscRow()); }
+  function collectDiscounts(el){ const out=[]; el.querySelectorAll('.disc-row').forEach(r=>{ const b=r.querySelector('select')?.value||''; const off=parseFloat(r.querySelector('input')?.value); if(b&&!isNaN(off)&&off>0) out.push({brand:b,off_eur_per_l:+off}); }); return out; }
+  function readMyCarFromUI(){ return {
+    fuel_type:els.carFuel.value||'95', consumption_l_per_100:+els.carCons.value||null, tank_capacity_l:+els.carTank.value||null,
+    current_level_l:+els.carCurrent.value||null, time_value_eur_per_hour:+els.carTimeVal.value||0, max_detour_min:+els.carDetour.value||0,
+    preferred_brands:selValues(els.carPrefBrands), discounts:collectDiscounts(els.discList)
+  }; }
+  function writeMyCarToUI(mc){ if(!mc) return;
+    if(mc.fuel_type) els.carFuel.value=mc.fuel_type;
+    if(mc.consumption_l_per_100!=null) els.carCons.value=mc.consumption_l_per_100;
+    if(mc.tank_capacity_l!=null) els.carTank.value=mc.tank_capacity_l;
+    if(mc.current_level_l!=null) els.carCurrent.value=mc.current_level_l;
+    if(mc.time_value_eur_per_hour!=null) els.carTimeVal.value=mc.time_value_eur_per_hour;
+    if(mc.max_detour_min!=null) els.carDetour.value=mc.max_detour_min;
+    preselect(els.carPrefBrands, mc.preferred_brands||[]); loadDiscounts(els.discList, mc.discounts||[]);
   }
-  
-  function collectDiscounts(listEl){
-    const out = []; 
-    listEl.querySelectorAll('.disc-row').forEach(r => {
-      const brand = r.querySelector('select')?.value || '';
-      const off = parseFloat(r.querySelector('input')?.value);
-      if (brand && !isNaN(off) && off > 0) out.push({brand, off_eur_per_l: +off});
-    });
-    return out;
-  }
+  function applyMyCarToFilters(mc){ if(!mc) mc=loadMyCar(); if(mc.fuel_type) els.fuel.value=mc.fuel_type;
+    if(mc.preferred_brands && mc.preferred_brands.length){ preselect(els.brand, mc.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); } saveState(); }
 
-  function readMyCarFromUI(){
-    return {
-      fuel_type: els.carFuel.value || '95',
-      consumption_l_per_100: +els.carCons.value || null,
-      tank_capacity_l: +els.carTank.value || null,
-      current_level_l: +els.carCurrent.value || null,
-      time_value_eur_per_hour: +els.carTimeVal.value || 0,
-      max_detour_min: +els.carDetour.value || 0,
-      preferred_brands: selValues(els.carPrefBrands),
-      discounts: collectDiscounts(els.discList)
-    };
-  }
-  
-  function writeMyCarToUI(mc){
-    if (!mc) return;
-    if (mc.fuel_type) els.carFuel.value = mc.fuel_type;
-    if (mc.consumption_l_per_100 != null) els.carCons.value = mc.consumption_l_per_100;
-    if (mc.tank_capacity_l != null) els.carTank.value = mc.tank_capacity_l;
-    if (mc.current_level_l != null) els.carCurrent.value = mc.current_level_l;
-    if (mc.time_value_eur_per_hour != null) els.carTimeVal.value = mc.time_value_eur_per_hour;
-    if (mc.max_detour_min != null) els.carDetour.value = mc.max_detour_min;
-    preselect(els.carPrefBrands, mc.preferred_brands || []);
-    loadDiscounts(els.discList, mc.discounts || []);
-  }
-  
-  function applyMyCarToFilters(mc){
-    if (!mc) mc = loadMyCar();
-    if (mc.fuel_type){ els.fuel.value = mc.fuel_type; }
-    if (mc.preferred_brands && mc.preferred_brands.length){
-      preselect(els.brand, mc.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
-    }
-    saveState();
-  }
+  function switchTab(name){ const isStations=(name==='stations'); els.screenStations.classList.toggle('active',isStations);
+    els.screenCar.classList.toggle('active',!isStations); els.tabStations.classList.toggle('active',isStations); els.tabCar.classList.toggle('active',!isStations); }
 
-  // Tab switching
-  function switchTab(name){
-    const isStations = (name === 'stations');
-    els.screenStations.classList.toggle('active', isStations);
-    els.screenCar.classList.toggle('active', !isStations);
-    els.tabStations.classList.toggle('active', isStations);
-    els.tabCar.classList.toggle('active', !isStations);
-  }
-
-  // Event listeners
-  els.country.addEventListener('change', () => onCountryChange('', []));
+  els.country.addEventListener('change', ()=> onCountryChange('', []));
   els.apply.addEventListener('click', applyFilters);
   els.nearby.addEventListener('click', findNearby);
   els.send.addEventListener('click', sendToBot);
+  els.discAdd.addEventListener('click', ()=> els.discList.appendChild(makeDiscRow()));
+  els.carSave.addEventListener('click', ()=>{ const mc=readMyCarFromUI(); saveMyCar(mc); setCarStatus('💾 Профиль сохранен!','ok'); });
+  els.carApplyToFilters.addEventListener('click', ()=>{ applyMyCarToFilters(); setCarStatus('🔄 Применено к фильтрам!','ok'); switchTab('stations'); applyFilters(); });
+  els.carReset.addEventListener('click', ()=>{ if(confirm('🗑️ Удалить профиль автомобиля?')){ localStorage.removeItem('fuelMyCar'); writeMyCarToUI({}); setCarStatus('🗑️ Профиль очищен','ok'); }});
+  els.tabStations.addEventListener('click', ()=> switchTab('stations'));
+  els.tabCar.addEventListener('click', ()=> switchTab('car'));
 
-  els.discAdd.addEventListener('click', () => els.discList.appendChild(makeDiscRow()));
-  
-  els.carSave.addEventListener('click', () => {
-    const mc = readMyCarFromUI();
-    saveMyCar(mc);
-    setCarStatus('💾 Профиль сохранен!', 'ok');
-  });
-  
-  els.carApplyToFilters.addEventListener('click', () => {
-    applyMyCarToFilters();
-    setCarStatus('🔄 Применено к фильтрам!', 'ok');
-    switchTab('stations');
-    applyFilters();
-  });
-  
-  els.carReset.addEventListener('click', () => {
-    if (confirm('🗑️ Удалить профиль автомобиля?')) {
-      localStorage.removeItem('fuelMyCar');
-      writeMyCarToUI({});
-      setCarStatus('🗑️ Профиль очищен', 'ok');
-    }
-  });
-
-  els.tabStations.addEventListener('click', () => switchTab('stations'));
-  els.tabCar.addEventListener('click', () => switchTab('car'));
-
-  // Initialization
-  const saved = restoreState();
-  if (saved.f) els.fuel.value = saved.f;
-  if (saved.l) els.limit.value = saved.l;
-
-  const mcSaved = loadMyCar();
-  writeMyCarToUI(mcSaved);
-  if (mcSaved.fuel_type) els.fuel.value = mcSaved.fuel_type;
-
-  try{ 
-    const g = JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); 
-    if(g.lat != null && g.lon != null) setLastGeo(g.lat, g.lon);
-  } catch {}
-
-  if (tg) { registerFromWebApp(); }
-  
-  loadCountries().then(() => {
-    setOptions(els.carPrefBrands, ALL_BRANDS);
-    preselect(els.carPrefBrands, mcSaved.preferred_brands || []);
-    loadDiscounts(els.discList, mcSaved.discounts || []);
-    if (mcSaved.preferred_brands && mcSaved.preferred_brands.length){
-      preselect(els.brand, mcSaved.preferred_brands.filter(b => (ALL_BRANDS||[]).includes(b)));
-    } else if (saved.brs) {
-      preselect(els.brand, saved.brs);
-    }
-    preselect(els.fresh, saved.frs || []);
-    applyFilters();
-  });
+  const saved=restoreState(); if(saved.f) els.fuel.value=saved.f; if(saved.l) els.limit.value=saved.l;
+  const mcSaved=loadMyCar(); writeMyCarToUI(mcSaved); if(mcSaved.fuel_type) els.fuel.value=mcSaved.fuel_type;
+  try{ const g=JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null && g.lon!=null) setLastGeo(g.lat,g.lon); }catch{}
+  if(tg){ registerFromWebApp(); }
+  loadCountries().then(()=>{ setOptions(els.carPrefBrands, ALL_BRANDS); preselect(els.carPrefBrands, mcSaved.preferred_brands||[]);
+    loadDiscounts(els.discList, mcSaved.discounts||[]); if(mcSaved.preferred_brands&&mcSaved.preferred_brands.length){ preselect(els.brand, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); }
+    else if(saved.brs){ preselect(els.brand, saved.brs); } preselect(els.fresh, saved.frs||[]); applyFilters(); });
 })();
 </script>
 </body>
