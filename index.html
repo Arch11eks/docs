@@ -3,565 +3,497 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Fuel Finder — АЗС и My Car</title>
+  <title>Fuel Finder — АЗС · Маршрут · Мой авто</title>
   <style>
-    :root{ 
-      --bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
-      --card: rgba(255, 255, 255, 0.08);
-      --card-hover: rgba(255, 255, 255, 0.12);
-      --border: rgba(255, 255, 255, 0.1);
-      --border-hover: rgba(255, 255, 255, 0.2);
-      --muted: #9ca3af;
-      --text: #f8fafc;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --success: #10b981;
-      --error: #ef4444;
-      --nearby: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      --primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      --secondary: rgba(255, 255, 255, 0.05);
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    :root{
+      --bg: linear-gradient(135deg,#0f0f23 0%,#1a1a2e 100%);
+      --card: rgba(255,255,255,.08);
+      --card-hover: rgba(255,255,255,.12);
+      --border: rgba(255,255,255,.1);
+      --border-hover: rgba(255,255,255,.2);
+      --muted:#9ca3af; --text:#f8fafc; --accent:#3b82f6; --accent-hover:#2563eb;
+      --success:#10b981; --error:#ef4444;
+      --nearby: linear-gradient(135deg,#10b981 0%,#059669 100%);
+      --primary: linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);
+      --secondary: rgba(255,255,255,.05);
+      --shadow: 0 4px 6px -1px rgba(0,0,0,.3), 0 2px 4px -1px rgba(0,0,0,.2);
       --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.3), 0 4px 6px -2px rgba(0,0,0,.2);
     }
-    body.tg-dark{ 
-      --bg: linear-gradient(135deg, #0a0a1a 0%, #151529 100%);
-      --card: rgba(255, 255, 255, 0.06);
-      --border: rgba(255, 255, 255, 0.08);
-      --muted: #8b92a8;
-    }
+    body.tg-dark{ --bg:linear-gradient(135deg,#0a0a1a 0%,#151529 100%); --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.08); --muted:#8b92a8 }
     *{box-sizing:border-box}
-    body{
-      margin:0;background:var(--bg);color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Inter',sans-serif;
-      font-size:14px;line-height:1.6;min-height:100vh;
-    }
-    a{color:var(--accent);text-decoration:none;transition:color .2s}
-    a:hover{color:var(--accent-hover)}
-    h1{font-size:28px;font-weight:700;margin:0 0 24px;
-      background:linear-gradient(135deg,var(--text) 0%,var(--muted) 100%);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .wrap{max-width:1200px;margin:0 auto;padding:24px 16px 100px}
-    .card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);
-      border-radius:20px;padding:24px;box-shadow:var(--shadow);transition:all .3s;position:relative;overflow:hidden}
-    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-      background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent)}
-    .card:hover{background:var(--card-hover);border-color:var(--border-hover);box-shadow:var(--shadow-lg);transform:translateY(-2px)}
-    label{display:block;font-size:13px;font-weight:600;color:var(--text);margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}
-    select,input,button{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);
-      background:var(--secondary);color:var(--text);font-size:14px;transition:all .2s;backdrop-filter:blur(10px)}
-    select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1);background:rgba(255,255,255,.08)}
-    select:disabled,input:disabled{opacity:.5;cursor:not-allowed}
-    button{cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border:none;position:relative;overflow:hidden}
-    button::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-      background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .5s}
-    button:hover::before{left:100%}
-    .btn-primary{background:var(--primary);color:#fff;box-shadow:var(--shadow)}
-    .btn-nearby{background:var(--nearby);color:#fff;box-shadow:var(--shadow)}
-    .btn-secondary{background:var(--secondary);color:var(--text);border:1px solid var(--border)}
-    .btn-secondary:hover{background:var(--card);border-color:var(--border-hover)}
-    .btn-link{background:transparent;color:var(--accent);border:none;padding:8px 0;text-transform:none;letter-spacing:normal}
-    .grid{display:grid;gap:20px}
-    .grid-stations{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-    .grid-car{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
-    .row{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap}
-    .row>*{flex:1;min-width:200px}
-    .status{margin-top:16px;padding:12px 16px;border-radius:12px;font-weight:500;min-height:20px;
-      backdrop-filter:blur(10px);border:1px solid var(--border);background:var(--secondary)}
-    .status.ok{background:rgba(16,185,129,.1);border-color:#10b981;color:#10b981}
-    .status.err{background:rgba(239,68,68,.1);border-color:#ef4444;color:#ef4444}
-    .list{margin-top:24px;display:grid;gap:16px}
-    .item{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);
-      border-radius:16px;padding:20px;transition:all .3s;position:relative;overflow:hidden}
-    .item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
-      background:linear-gradient(90deg,var(--accent),#10b981);transform:scaleX(0);transition:transform .3s}
-    .item:hover{background:var(--card-hover);border-color:var(--border-hover);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-    .item:hover::before{transform:scaleX(1)}
-    .item-title{font-size:18px;font-weight:700;margin-bottom:8px}
-    .item-price{font-size:20px;font-weight:800;color:#10b981;text-shadow:0 0 10px rgba(16,185,129,.3)}
-    .item-info{color:var(--muted);margin:8px 0;font-size:13px}
-    .links{display:flex;gap:12px;margin-top:16px}
-    .icon-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;
-      background:var(--secondary);border:1px solid var(--border);transition:all .2s;backdrop-filter:blur(10px)}
-    .icon-btn:hover{background:var(--card);border-color:var(--border-hover);transform:translateY(-2px);box-shadow:var(--shadow)}
-    .icon-btn img{width:22px;height:22px;object-fit:contain;display:block}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:var(--secondary);
-      border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:500;backdrop-filter:blur(10px)}
-    .geo-chip{background:rgba(16,185,129,.1);border-color:#10b981;color:#10b981}
-    .discounts{display:grid;gap:12px}
-    .disc-row{display:grid;grid-template-columns:1fr 140px 50px;gap:12px;align-items:end}
-    .disc-row button{width:50px;height:50px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
-    .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);backdrop-filter:blur(20px);
-      border-top:1px solid var(--border);display:flex;z-index:100;box-shadow:0 -4px 6px -1px rgba(0,0,0,.1)}
-    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;color:var(--muted);
-      cursor:pointer;user-select:none;transition:all .2s;position:relative}
-    .tab-btn::before{content:'';position:absolute;top:0;left:20%;right:20%;height:3px;background:var(--accent);
-      border-radius:0 0 3px 3px;transform:scaleX(0);transition:transform .3s}
-    .tab-btn.active{color:var(--text);font-weight:600}
-    .tab-btn.active::before{transform:scaleX(1)}
-    .tab-icon{font-size:24px}
-    .screen{opacity:0;transform:translateY(20px);transition:all .3s;display:none}
-    .screen.active{opacity:1;transform:translateY(0);display:block}
-    .hint{color:var(--muted);font-size:12px;margin-top:6px;font-style:italic}
-    .footer{margin:32px 0 120px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
-    @media (max-width:768px){
-      .wrap{padding:16px 12px 100px}.card{padding:20px}
-      .grid-stations{grid-template-columns:1fr}.grid-car{grid-template-columns:1fr}
-      .row{flex-direction:column}.row>*{min-width:unset}.disc-row{grid-template-columns:1fr 100px 44px}
-      h1{font-size:24px}
-    }
-    @media (max-width:480px){
-      .wrap{padding:12px 8px 100px}.card{padding:16px}.disc-row{grid-template-columns:1fr 80px 40px}
-    }
-    .loading{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;line-height:1.6;min-height:100vh}
+    h1{font-size:26px;margin:0 0 18px;background:linear-gradient(135deg,var(--text),var(--muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px 14px 100px}
+    .card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow);transition:.25s}
+    .card:hover{background:var(--card-hover);border-color:var(--border-hover);box-shadow:var(--shadow-lg)}
+    label{display:block;font-size:12px;font-weight:700;margin:0 0 8px;text-transform:uppercase}
+    select,input,button,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--secondary);color:var(--text)}
+    select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    button{cursor:pointer;font-weight:700;border:none;position:relative;overflow:hidden}
+    .btn{background:var(--primary);color:#fff}
+    .btn.nearby{background:var(--nearby)}
+    .btn.secondary{background:var(--secondary);color:var(--text);border:1px solid var(--border)}
+    .grid{display:grid;gap:14px}
+    .grid-st{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+    .grid-car{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .row>*{flex:1 1 220px}
+    .list{margin-top:16px;display:grid;gap:12px}
+    .item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+    .item-title{font-weight:800}
+    .item-price{font-weight:900;color:var(--success)}
+    .muted{color:var(--muted)}
+    .status{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--secondary);border:1px solid var(--border)}
+    .status.ok{border-color:var(--success);color:var(--success);background:rgba(16,185,129,.08)}
+    .status.err{border-color:var(--error);color:var(--error);background:rgba(239,68,68,.08)}
+    .links{display:flex;gap:10px;margin-top:8px}
+    .icon-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--secondary);border:1px solid var(--border)}
+    .icon-btn img{width:22px;height:22px;object-fit:contain}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--secondary);color:var(--muted)}
+    .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100}
+    .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;color:var(--muted);cursor:pointer}
+    .tab.active{color:var(--text);font-weight:800}
+    .screen{display:none}.screen.active{display:block}
+    @media (max-width:768px){.grid-st{grid-template-columns:1fr}.grid-car{grid-template-columns:1fr}}
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 <div class="wrap">
+
+  <!-- СТАНЦИИ -->
   <div id="screen-stations" class="screen active">
-    <h1>⛽ Поиск станций</h1>
+    <h1>⛽ Станции</h1>
     <div class="card">
-      <div class="grid grid-stations">
+      <div class="grid grid-st">
+        <div><label for="country">Страна</label><select id="country"></select></div>
+        <div><label for="city">Город</label><select id="city"><option value="">Все</option></select></div>
         <div>
-          <label for="country">🌍 Страна</label>
-          <select id="country"></select>
-        </div>
-        <div>
-          <label for="city">🏙️ Город</label>
-          <select id="city"><option value="">Все города</option></select>
-        </div>
-        <div>
-          <label for="brand">🏢 Бренды</label>
+          <label for="brand">Бренды</label>
           <select id="brand" multiple size="4"></select>
-          <div class="hint">Удерживайте Ctrl для выбора нескольких</div>
+          <small class="muted">Можно выбрать несколько</small>
         </div>
+        <div><label for="fuel">Топливо</label><select id="fuel"><option>95</option><option>98</option><option>diesel</option><option>lpg</option></select></div>
         <div>
-          <label for="fuel">⛽ Тип топлива</label>
-          <select id="fuel">
-            <option value="95">95 бензин</option>
-            <option value="98">98 бензин</option>
-            <option value="diesel">Дизель</option>
-            <option value="lpg">Газ</option>
-          </select>
-        </div>
-        <div>
-          <label for="fresh">📅 Свежесть данных</label>
+          <label for="fresh">Свежесть</label>
           <select id="fresh" multiple size="4">
             <option value="today">Сегодня</option>
             <option value="yesterday">Вчера</option>
             <option value="daybefore">Позавчера</option>
             <option value="other">Другое</option>
           </select>
-          <div class="hint">Можно выбрать несколько периодов</div>
         </div>
-        <div>
-          <label for="limit">📊 Количество</label>
-          <select id="limit">
-            <option value="10">10 станций</option>
-            <option value="20" selected>20 станций</option>
-            <option value="50">50 станций</option>
-          </select>
-        </div>
+        <div><label for="limit">Лимит</label><select id="limit"><option>10</option><option selected>20</option><option>50</option></select></div>
       </div>
 
       <div class="row">
-        <button id="apply"  class="btn-primary">🔍 Показать</button>
-        <button id="nearby" class="btn-nearby">📍 Найти рядом</button>
-        <button id="send"   class="btn-secondary">📤 Отправить в чат</button>
+        <button id="apply" class="btn">Показать</button>
+        <button id="nearby" class="btn nearby">Найти рядом</button>
+        <button id="send" class="btn secondary">Отправить в чат</button>
       </div>
 
-      <div class="row" id="geoRow" style="display:none">
-        <div class="pill geo-chip" id="lastGeoChip"></div>
-      </div>
-
-      <div id="status" class="status">Готов к поиску</div>
+      <div class="row" id="geoRow" style="display:none"><div class="pill" id="lastGeoChip"></div></div>
+      <div id="status" class="status">Готово</div>
     </div>
 
     <div id="list" class="list"></div>
-    <div class="footer">
-      💡 В Telegram «Отправить в чат» передаст выбранные фильтры боту.
-    </div>
   </div>
 
-  <div id="screen-car" class="screen">
-    <h1>🚗 Мой автомобиль</h1>
+  <!-- МАРШРУТ -->
+  <div id="screen-route" class="screen">
+    <h1>🧭 Маршрут</h1>
     <div class="card">
       <div class="grid grid-car">
         <div>
-          <label for="car_fuel_type">⛽ Тип топлива</label>
-          <select id="car_fuel_type">
-            <option value="95">95 бензин</option>
-            <option value="98">98 бензин</option>
-            <option value="diesel">Дизель</option>
-            <option value="lpg">Газ</option>
-          </select>
+          <label for="route_from">Откуда</label>
+          <input id="route_from" placeholder="Адрес (или оставьте пустым и нажмите «Моя локация»)">
+          <div class="row"><button id="route_use_geo" class="btn secondary" style="max-width:220px">Моя локация</button></div>
         </div>
         <div>
-          <label for="car_consumption">📏 Расход (л/100км)</label>
-          <input id="car_consumption" type="number" step="0.1" min="1" placeholder="например, 7.5">
+          <label for="route_to">Куда</label>
+          <input id="route_to" placeholder="Адрес назначения" />
         </div>
         <div>
-          <label for="car_tank">🛢️ Объём бака (л)</label>
-          <input id="car_tank" type="number" step="1" min="1" placeholder="например, 50">
+          <label for="route_liters">Сколько заправить (л)</label>
+          <input id="route_liters" type="number" min="1" step="1" placeholder="например, 20"/>
         </div>
         <div>
-          <label for="car_current">📊 Сейчас в баке (л)</label>
-          <input id="car_current" type="number" step="1" min="0" placeholder="например, 15">
+          <label for="route_fuel">Топливо</label>
+          <select id="route_fuel"><option>95</option><option>98</option><option>diesel</option><option>lpg</option></select>
         </div>
-        <div>
-          <label for="car_time_value">💰 Цена времени (€/час)</label>
-          <input id="car_time_value" type="number" step="1" min="0" placeholder="0 = не учитывать">
+      </div>
+      <div class="row">
+        <button id="route_calc" class="btn">Посчитать</button>
+      </div>
+      <div id="route_status" class="status">Укажите адрес и объём заправки</div>
+    </div>
+
+    <div id="route_result" class="list"></div>
+  </div>
+
+  <!-- МОЙ АВТО -->
+  <div id="screen-car" class="screen">
+    <h1>🚗 Мой авто</h1>
+    <div class="card">
+      <div class="grid grid-car">
+        <div><label for="car_fuel_type">Тип топлива</label>
+          <select id="car_fuel_type"><option>95</option><option>98</option><option>diesel</option><option>lpg</option></select>
         </div>
-        <div>
-          <label for="car_detour">🛣️ Макс. объезд (мин)</label>
-          <input id="car_detour" type="number" step="1" min="0" placeholder="например, 10">
+        <div><label for="car_consumption">Расход (л/100 км)</label><input id="car_consumption" type="number" step="0.1" min="1" placeholder="например, 7.5"></div>
+        <div><label for="car_tank">Объём бака (л)</label><input id="car_tank" type="number" step="1" min="1" placeholder="например, 50"></div>
+      </div>
+
+      <div style="margin-top:14px">
+        <label>Скидки по брендам (€/л)</label>
+        <div id="discList" class="list"></div>
+        <div class="row">
+          <button id="discAdd" class="btn secondary" style="max-width:220px">+ Добавить</button>
+          <span class="muted" style="align-self:center">Напр., 0.04 = 4 цента за литр</span>
         </div>
       </div>
 
-      <div style="margin-top:24px">
-        <label for="car_pref_brands">⭐ Предпочитаемые бренды</label>
-        <select id="car_pref_brands" multiple size="6" style="height:140px"></select>
-        <div class="hint">Автоматически применяются при поиске станций</div>
+      <div class="row" style="margin-top:14px">
+        <button id="carSave" class="btn">Сохранить</button>
+        <button id="carApplyToFilters" class="btn secondary">Применить к фильтрам</button>
       </div>
-
-      <div style="margin-top:24px">
-        <label>💳 Скидки по брендам (€/л)</label>
-        <div id="discList" class="discounts"></div>
-        <div class="row" style="margin-top:12px">
-          <button id="discAdd" class="btn-secondary" style="max-width:240px">➕ Добавить скидку</button>
-          <div class="hint" style="align-self:center;margin-top:0;">Например, 0.04 = 4 цента</div>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:24px">
-        <button id="carSave" class="btn-primary">💾 Сохранить</button>
-        <button id="carApplyToFilters" class="btn-nearby">🔄 Применить к фильтрам</button>
-        <button id="carReset" class="btn-link">🗑️ Сбросить профиль</button>
-      </div>
-
-      <div id="carStatus" class="status">Заполните данные и нажмите «Сохранить»</div>
+      <div id="carStatus" class="status">Заполните и сохраните</div>
     </div>
   </div>
 </div>
 
-<!-- таббар -->
+<!-- Таббар -->
 <div class="tabbar">
-  <div id="tabStations" class="tab-btn active"><div class="tab-icon">⛽</div><div>Станции</div></div>
-  <div id="tabCar" class="tab-btn"><div class="tab-icon">🚗</div><div>Мой авто</div></div>
+  <div id="tabStations" class="tab active"><div>⛽</div><small>Станции</small></div>
+  <div id="tabRoute" class="tab"><div>🧭</div><small>Маршрут</small></div>
+  <div id="tabCar" class="tab"><div>🚗</div><small>Мой авто</small></div>
 </div>
 
 <script>
 (() => {
   const API_BASE = "https://et14k9zlk8.execute-api.eu-north-1.amazonaws.com";
-  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-  if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme === 'dark') document.body.classList.add('tg-dark'); } catch {} }
+  const ASSETS = { maps: "maps.png", waze: "waze.png" }; // положи файлы в /assets
+  const tg = window.Telegram?.WebApp || null;
+  if (tg){ try{ tg.ready(); tg.expand(); if(tg.colorScheme==='dark') document.body.classList.add('tg-dark'); }catch{} }
 
-  // Где лежат картинки кнопок (оставь как есть, если уже добавил)
-  const ASSETS = { maps: "maps.png", waze: "waze.png" };
-
-  // ---------- НОВОЕ: оперативное состояние текущего экрана ----------
-  let LAST_MODE = 'search';               // 'search' | 'nearby'
-  let LAST_ITEMS = [];                    // текущий показанный список
-  let LAST_GEO = null;                    // {lat, lon} если режим "рядом"
-
-  async function registerFromWebApp(){
-    if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
-    const u = tg.initDataUnsafe.user;
-    try {
-      await fetch(`${API_BASE}/user/register`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          source:'telegram_webapp',
-          platform_user_id:String(u.id),
-          username:u.username||null,
-          first_name:u.first_name||null,
-          last_name:u.last_name||null,
-          lang: tg.initDataUnsafe?.user?.language_code||null
-        })
-      });
-    } catch(e) {}
-  }
+  // --- состояние экрана/данных для отправки в бот ---
+  let LAST_MODE = 'search';  // 'search' | 'nearby' | 'route'
+  let LAST_ITEMS = [];
+  let LAST_GEO = null;
 
   const els = {
+    // stations
     country:$('#country'), city:$('#city'), brand:$('#brand'), fuel:$('#fuel'),
     fresh:$('#fresh'), limit:$('#limit'), apply:$('#apply'), nearby:$('#nearby'),
-    send:$('#send'), list:$('#list'), status:$('#status'), lastGeo:$('#lastGeoChip'),
-    geoRow:$('#geoRow'),
+    send:$('#send'), list:$('#list'), status:$('#status'), lastGeo:$('#lastGeoChip'), geoRow:$('#geoRow'),
+    // route
+    routeFrom:$('#route_from'), routeTo:$('#route_to'), routeLiters:$('#route_liters'), routeFuel:$('#route_fuel'),
+    routeUseGeo:$('#route_use_geo'), routeCalc:$('#route_calc'), routeStatus:$('#route_status'), routeResult:$('#route_result'),
+    // car
     carFuel:$('#car_fuel_type'), carCons:$('#car_consumption'), carTank:$('#car_tank'),
-    carCurrent:$('#car_current'), carTimeVal:$('#car_time_value'), carDetour:$('#car_detour'),
-    carPrefBrands:$('#car_pref_brands'), discList:$('#discList'), discAdd:$('#discAdd'),
-    carSave:$('#carSave'), carApplyToFilters:$('#carApplyToFilters'), carReset:$('#carReset'),
-    carStatus:$('#carStatus'),
-    screenStations:$('#screen-stations'), screenCar:$('#screen-car'),
-    tabStations:$('#tabStations'), tabCar:$('#tabCar')
+    discList:$('#discList'), discAdd:$('#discAdd'), carSave:$('#carSave'), carApply:$('#carApplyToFilters'), carStatus:$('#carStatus'),
+    // tabs
+    sStations:$('#screen-stations'), sRoute:$('#screen-route'), sCar:$('#screen-car'),
+    tStations:$('#tabStations'), tRoute:$('#tabRoute'), tCar:$('#tabCar')
   };
   function $(id){ return document.getElementById(id.replace(/^#/,'')); }
-
-  async function fetchJSON(url){ const r=await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
+  async function fetchJSON(url, opt){ const r=await fetch(url, opt); if(!r.ok) throw new Error(await r.text().catch(()=>r.statusText)); return r.json(); }
   function setStatus(m,c=''){ els.status.textContent=m; els.status.className='status '+(c||''); }
+  function setRouteStatus(m,c=''){ els.routeStatus.textContent=m; els.routeStatus.className='status '+(c||''); }
   function setCarStatus(m,c=''){ els.carStatus.textContent=m; els.carStatus.className='status '+(c||''); }
   function selValues(s){ return Array.from(s.selectedOptions).map(o=>o.value).filter(Boolean); }
-  function setOptions(s, opts){ s.innerHTML = opts.map(o=>`<option value="${o}">${o}</option>`).join(''); }
+  function setOptions(s, arr){ s.innerHTML = arr.map(v=>`<option>${v}</option>`).join(''); }
   function preselect(s, vals){ const set=new Set(vals||[]); Array.from(s.options).forEach(o=>o.selected=set.has(o.value)); }
-  function setLastGeo(lat,lon){ if(lat==null||lon==null){ els.geoRow.style.display='none'; return;} els.geoRow.style.display='flex'; els.lastGeo.innerHTML=`📍 Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
+  function setLastGeo(lat,lon){ if(lat==null||lon==null){ els.geoRow.style.display='none'; return;} els.geoRow.style.display='flex'; els.lastGeo.textContent=`Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
 
-  function saveState(){ localStorage.setItem('fuelFinderState', JSON.stringify({
-    c:els.country.value, ci:els.city.value, brs:selValues(els.brand),
-    f:els.fuel.value, l:els.limit.value, frs:selValues(els.fresh)
-  })); }
-  function restoreState(){ try{ const s=JSON.parse(localStorage.getItem('fuelFinderState')||'{}'); if(!s.frs&&s.fr)s.frs=[s.fr]; return s; }catch{return{}}}
-  function saveMyCar(mc){ localStorage.setItem('fuelMyCar', JSON.stringify(mc)); }
-  function loadMyCar(){ try{ return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); }catch{return{}} }
+  // --- user id из Telegram для привязки профиля ---
+  const UID = (tg?.initDataUnsafe?.user?.id) ? String(tg.initDataUnsafe.user.id) : null;
 
+  // ===== регистрация и профиль =====
+  async function register(){ if(!UID) return;
+    try{ await fetchJSON(`${API_BASE}/user/register`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({source:'telegram_webapp', platform_user_id:UID, username:tg?.initDataUnsafe?.user?.username||null})}); }catch{}
+  }
+  async function loadProfile(){
+    if(!UID) return loadMyCarLocal();
+    try{
+      const p = await fetchJSON(`${API_BASE}/user/profile?uid=${encodeURIComponent(UID)}`);
+      if (p && typeof p==='object'){ applyProfileToUI(p); saveMyCarLocal(p); return; }
+      loadMyCarLocal();
+    }catch{ loadMyCarLocal(); }
+  }
+  async function saveProfile(p){
+    saveMyCarLocal(p); // на всякий случай сохраним локально
+    if(!UID) return;
+    try{ await fetchJSON(`${API_BASE}/user/profile`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ uid: UID, profile: p })}); setCarStatus('Сохранено ✔','ok'); }
+    catch(e){ setCarStatus('Ошибка сохранения (локально сохранено)','err'); }
+  }
+
+  function saveMyCarLocal(p){ localStorage.setItem('fuelMyCar', JSON.stringify(p)); }
+  function loadMyCarLocal(){
+    try{ const p = JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); applyProfileToUI(p); }
+    catch{ /* noop */ }
+  }
+  function readProfileFromUI(){ return {
+    fuel_type: els.carFuel.value || '95',
+    consumption_l_per_100: +els.carCons.value || null,
+    tank_capacity_l: +els.carTank.value || null,
+    discounts: collectDiscounts(els.discList),
+    defaults: { max_detour_min: 5 } // по умолчанию берём 5 мин
+  }; }
+  function applyProfileToUI(p){
+    if (!p) return;
+    if (p.fuel_type) els.carFuel.value = p.fuel_type;
+    if (p.consumption_l_per_100!=null) els.carCons.value = p.consumption_l_per_100;
+    if (p.tank_capacity_l!=null) els.carTank.value = p.tank_capacity_l;
+    loadDiscounts(els.discList, p.discounts||[]);
+    // подтянем в вкладку «Маршрут» топливо по умолчанию:
+    els.routeFuel.value = p.fuel_type || '95';
+  }
+
+  // ===== meta =====
   let ALL_BRANDS = [];
-  async function loadCountries(){
-    setStatus('🔄 Загружаю данные…'); els.country.disabled=true; els.country.innerHTML=`<option>Загрузка…</option>`; els.country.classList.add('loading');
-    try{
-      const j=await fetchJSON(`${API_BASE}/meta`);
-      const countries=j.countries||[]; ALL_BRANDS=j.brands||[];
-      setOptions(els.country, countries);
-      fillBrands(ALL_BRANDS, restoreState().brs||[]);
-      setOptions(els.carPrefBrands, ALL_BRANDS);
-      preselect(els.carPrefBrands, loadMyCar().preferred_brands||[]);
-      const saved=restoreState();
-      if(saved.c && countries.includes(saved.c)) els.country.value=saved.c;
-      await onCountryChange(saved.ci);
-      preselect(els.fresh, saved.frs||[]);
-      setStatus('✅ Готов к поиску');
-    }catch(e){ console.error(e); setStatus('❌ Ошибка загрузки данных','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
-    finally{ els.country.disabled=false; els.country.classList.remove('loading'); }
+  async function loadMeta(){
+    setStatus('Загружаю…'); try{
+      const m = await fetchJSON(`${API_BASE}/meta`);
+      setOptions(els.country, m.countries||[]);
+      ALL_BRANDS = m.brands||[];
+      fillBrands(ALL_BRANDS);
+      setStatus('Готово','ok');
+    }catch(e){ setStatus('Ошибка метаданных','err'); }
   }
-  function fillBrands(brands, preVals){ els.brand.innerHTML=(brands||[]).map(b=>`<option value="${b}">${b}</option>`).join(''); preselect(els.brand, preVals||[]); }
-  async function onCountryChange(prefCity){
-    const c=els.country.value; setStatus('🔄 Загружаю города…'); els.city.disabled=true; els.brand.disabled=true; els.city.classList.add('loading');
-    try{
-      const j=await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`);
-      const cities=j.cities||[];
-      els.city.innerHTML=`<option value="">Все города</option>`+cities.map(ci=>`<option>${ci}</option>`).join('');
-      if(prefCity && cities.includes(prefCity)) els.city.value=prefCity;
-      setStatus('✅ Готов к поиску');
-    }catch(e){ console.error(e); setStatus('❌ Ошибка загрузки городов','err'); els.city.innerHTML=`<option>Ошибка</option>`; }
-    finally{ els.city.disabled=false; els.brand.disabled=false; els.city.classList.remove('loading'); }
+  function fillBrands(brands){ els.brand.innerHTML=(brands||[]).map(b=>`<option value="${b}">${b}</option>`).join(''); }
+  async function onCountryChange(){
+    const c=els.country.value; setStatus('Города…');
+    try{ const r=await fetchJSON(`${API_BASE}/meta?country=${encodeURIComponent(c)}`); els.city.innerHTML=`<option value="">Все</option>`+(r.cities||[]).map(x=>`<option>${x}</option>`).join(''); setStatus('Готово',''); }
+    catch{ setStatus('Ошибка городов','err'); }
   }
 
-  // Перевод и классификация свежести
-  function _norm(s){ if(!s) return ''; return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+  // ===== перевод свежести =====
+  const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
   function translateFreshLabel(raw){
-    if(!raw) return ''; const n=_norm(raw);
-    if(['sodien','siandien','tana','tana.','sodien.','siandien.','šodien'].includes(n)) return 'Сегодня';
-    if(['vakar','eile','vakar.','eile.'].includes(n)) return 'Вчера';
+    const n=norm(raw); if(['sodien','siandien','tana','šodien'].includes(n)) return 'Сегодня';
+    if(['vakar','eile'].includes(n)) return 'Вчера';
     if(['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'Позавчера';
-    if(/\d/.test(raw)) return raw; return raw;
+    if(/\d/.test(raw||'')) return raw; return raw||'';
   }
   function classifyFresh(it){
-    const raw=(it.fresh_label||'').trim(), n=_norm(raw);
+    const n=norm(it.fresh_label||'');
     if(['sodien','siandien','tana','šodien'].includes(n)) return 'today';
     if(['vakar','eile'].includes(n)) return 'yesterday';
     if(['aizvakar','uzvakar','uleeile','ule eile','ule-eile'].includes(n)) return 'daybefore';
-    if(it.fresh_days===0) return 'today';
-    if(it.fresh_days===1) return 'yesterday';
-    if(it.fresh_days===2) return 'daybefore';
+    if(it.fresh_days===0) return 'today'; if(it.fresh_days===1) return 'yesterday'; if(it.fresh_days===2) return 'daybefore';
     return 'other';
   }
-  function passesFreshFilter(it, want){ if(!want||!want.length) return true; return want.includes(classifyFresh(it)); }
+  const freshPass = (it, arr)=> !arr?.length || arr.includes(classifyFresh(it));
 
-  // ---------- ПОИСК (учитываем limit на клиенте гарантированно) ----------
-  async function applyFilters(){
-    setStatus('🔍 Ищу станции…'); els.list.innerHTML='';
-    const brands=selValues(els.brand);
-    const wantFresh=selValues(els.fresh);
-    const limit = parseInt(els.limit.value, 10) || 50;
-
-    const qs=new URLSearchParams({
-      country:els.country.value||'', city:els.city.value||'',
-      brands:brands.join(','), fuel:els.fuel.value||'95', limit
-    });
-
-    try{
-      const j=await fetchJSON(`${API_BASE}/search?`+qs.toString());
-      let items=(j.items||[]).filter(it=>passesFreshFilter(it, wantFresh));
-      if (items.length > limit) items = items.slice(0, limit);      // << принудительно
-      LAST_MODE='search'; LAST_ITEMS=items; LAST_GEO=null;          // << запоминаем показанное
-      setStatus(`✅ Найдено: ${items.length}`);
-      renderList(items);
-      saveState();
-    }catch(e){
-      console.error(e); setStatus('❌ Ошибка поиска','err');
-      els.list.innerHTML=`<div class="item"><span style="color:#ef4444">${String(e).slice(0,200)}</span></div>`;
-    }
-  }
-
-  function gmapsDir(it){
-    if(it.lat!=null && it.lon!=null){
-      return `https://www.google.com/maps/dir/?api=1&destination=${it.lat},${it.lon}&travelmode=driving`;
-    }
-    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
-    return `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
-  }
-  function wazeNav(it){
-    if(it.lat!=null && it.lon!=null) return `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`;
-    const q=encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`.trim());
-    return `https://waze.com/ul?q=${q}&navigate=yes`;
-  }
+  // ===== stations search / nearby =====
+  function gmapsDir(it){ return (it.lat!=null && it.lon!=null)
+      ? `https://www.google.com/maps/dir/?api=1&destination=${it.lat},${it.lon}&travelmode=driving`
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`)}&travelmode=driving`; }
+  function wazeNav(it){ return (it.lat!=null && it.lon!=null)
+      ? `https://waze.com/ul?ll=${it.lat},${it.lon}&navigate=yes`
+      : `https://waze.com/ul?q=${encodeURIComponent(`${it.name||''} ${it.address||''} ${it.city||''} ${it.country||''}`)}&navigate=yes`; }
 
   function renderList(items){
-    if(!items.length){
-      els.list.innerHTML='<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">🔍 Станции не найдены</div></div>'; 
-      return;
-    }
+    if(!items.length){ els.list.innerHTML='<div class="item muted">Ничего не найдено</div>'; return; }
     els.list.innerHTML = items.map((it,i)=>{
-      const price = it.price!=null ? Number(it.price).toFixed(3) : '—';
+      const price = it.price!=null?Number(it.price).toFixed(3):'—';
       const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} дн. назад`) : '');
-      const info = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + (freshTxt?` • 📅 ${freshTxt}`:'');
+      const info = [it.brand, it.country, it.city].filter(Boolean).join(' · ') + (freshTxt?` · ${freshTxt}`:'');
       return `<div class="item">
-        <div class="item-title">${i+1}. ${it.name}</div>
-        <div class="item-price">${price} €/л</div>
-        <div class="item-info">${info}</div>
-        <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
+        <div class="item-title">${i+1}. ${it.name} — <span class="item-price">${price} €/л</span></div>
+        <div class="muted">${info}</div>
+        <div class="muted">${it.address||''}</div>
         <div class="links">
-          <a class="icon-btn maps" href="${gmapsDir(it)}" target="_blank" rel="noopener" title="Маршрут в Google Maps">
-            <img src="${ASSETS.maps}" alt="Google Maps">
-          </a>
-          <a class="icon-btn waze" href="${wazeNav(it)}" target="_blank" rel="noopener" title="Маршрут в Waze">
-            <img src="${ASSETS.waze}" alt="Waze">
-          </a>
+          <a class="icon-btn" href="${gmapsDir(it)}" target="_blank" title="Google Maps"><img src="${ASSETS.maps}" alt="Maps"></a>
+          <a class="icon-btn" href="${wazeNav(it)}"  target="_blank" title="Waze"><img src="${ASSETS.waze}"  alt="Waze"></a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  function renderListWithDistance(items){
+    if(!items.length){ els.list.innerHTML='<div class="item muted">Рядом ничего</div>'; return; }
+    els.list.innerHTML = items.map((it,i)=>{
+      const price = it.price!=null?Number(it.price).toFixed(3):'—';
+      const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} дн. назад`) : '');
+      const road = (it.drive_distance_km!=null||it.drive_duration_min!=null) ? ` · по дороге: ${it.drive_distance_km?.toFixed?.(1)||'—'} км, ${it.drive_duration_min?.toFixed?.(0)||'—'} мин` : '';
+      const straight = (it.distance_km!=null)?` · по прямой: ${Number(it.distance_km).toFixed(1)} км`:'';
+      const info = [it.brand, it.country, it.city].filter(Boolean).join(' · ') + (freshTxt?` · ${freshTxt}`:'') + road + straight;
+      return `<div class="item">
+        <div class="item-title">${i+1}. ${it.name} — <span class="item-price">${price} €/л</span></div>
+        <div class="muted">${info}</div>
+        <div class="muted">${it.address||''}</div>
+        <div class="links">
+          <a class="icon-btn" href="${gmapsDir(it)}" target="_blank"><img src="${ASSETS.maps}"></a>
+          <a class="icon-btn" href="${wazeNav(it)}"  target="_blank"><img src="${ASSETS.waze}"></a>
         </div>
       </div>`;
     }).join('');
   }
 
-  // ---------- РЯДОМ (тоже гарантируем limit и помним гео/список) ----------
+  async function applyFilters(){
+    setStatus('Ищу…'); els.list.innerHTML='';
+    const qs = new URLSearchParams({
+      country: els.country.value||'', city: els.city.value||'',
+      brands: selValues(els.brand).join(','), fuel: els.fuel.value||'95',
+      limit: els.limit.value||20
+    });
+    try{
+      const r = await fetchJSON(`${API_BASE}/search?`+qs.toString());
+      const want = selValues(els.fresh);
+      const lim = parseInt(els.limit.value||20,10);
+      let items = (r.items||[]).filter(it=>freshPass(it,want));
+      if (items.length>lim) items = items.slice(0,lim);
+      LAST_MODE='search'; LAST_ITEMS=items; LAST_GEO=null;
+      renderList(items); setStatus(`Найдено: ${items.length}`,'ok');
+    }catch(e){ setStatus('Ошибка поиска: '+e,'err'); }
+  }
+
   async function findNearby(){
-    if(!navigator.geolocation){ setStatus('❌ Геолокация не поддерживается','err'); return; }
-    const brands=selValues(els.brand), wantFresh=selValues(els.fresh);
-    const limit = parseInt(els.limit.value, 10) || 50;
-
-    setStatus('📍 Получаю местоположение…');
+    if(!navigator.geolocation){ setStatus('Нет геолокации','err'); return; }
+    setStatus('Локация…');
     navigator.geolocation.getCurrentPosition(async pos=>{
-      const {latitude,longitude}=pos.coords; setStatus('🔍 Ищу ближайшие…');
-
-      const qs=new URLSearchParams({
-        lat:latitude, lon:longitude, brands:brands.join(','), fuel:els.fuel.value||'95', limit, routing:'drive'
+      const {latitude,longitude}=pos.coords; setStatus('Ищу рядом…');
+      const qs = new URLSearchParams({
+        lat: latitude, lon: longitude, brands: selValues(els.brand).join(','),
+        fuel: els.fuel.value||'95', limit: els.limit.value||20, routing: 'drive'
       });
-
       try{
-        const j=await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
-        let items=(j.items||[]).filter(it=>passesFreshFilter(it, wantFresh));
-        if (items.length > limit) items = items.slice(0, limit);      // << принудительно
-
-        LAST_MODE='nearby'; LAST_ITEMS=items; LAST_GEO={lat:latitude, lon:longitude}; // << запоминаем
-        setStatus(`✅ Найдено рядом: ${items.length}`);
-        renderListWithDistance(items);
+        const r = await fetchJSON(`${API_BASE}/nearby?`+qs.toString());
+        const want = selValues(els.fresh); const lim = parseInt(els.limit.value||20,10);
+        let items = (r.items||[]).filter(it=>freshPass(it, want));
+        if (items.length>lim) items = items.slice(0,lim);
+        LAST_MODE='nearby'; LAST_ITEMS=items; LAST_GEO={lat:latitude,lon:longitude};
         localStorage.setItem('fuelFinderLastGeo', JSON.stringify(LAST_GEO));
         setLastGeo(latitude, longitude);
-      }catch(e){ console.error(e); setStatus('❌ Ошибка поиска рядом','err'); }
-    }, err=> setStatus('❌ Не удалось получить геолокацию: '+err.message,'err'),
-       { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+        renderListWithDistance(items); setStatus(`Рядом: ${items.length}`,'ok');
+      }catch(e){ setStatus('Ошибка рядом: '+e,'err'); }
+    }, err=> setStatus('Геолокация: '+err.message,'err'), {enableHighAccuracy:true,timeout:10000});
   }
 
-  function renderListWithDistance(items){
-    if(!items.length){
-      els.list.innerHTML='<div class="item"><div style="color:var(--muted);text-align:center;padding:20px;">📍 Рядом станций не найдено</div></div>'; 
-      return;
-    }
-    els.list.innerHTML = items.map((it,i)=>{
-      const price = it.price!=null ? Number(it.price).toFixed(3) : '—';
-      const freshTxt = translateFreshLabel(it.fresh_label) || (it.fresh_days!=null ? (it.fresh_days===0?'Сегодня':it.fresh_days===1?'Вчера':it.fresh_days===2?'Позавчера':`${it.fresh_days} дн. назад`) : '');
-      const straight = (it.distance_km!=null)?` • 📏 ${Number(it.distance_km).toFixed(1)} км`:'';
-      const road = (it.drive_distance_km!=null||it.drive_duration_min!=null)
-        ? ` • 🛣️ ${it.drive_distance_km!=null?Number(it.drive_distance_km).toFixed(1)+' км':'—'}${it.drive_duration_min!=null?', '+Number(it.drive_duration_min).toFixed(0)+' мин':''}`:'';
-      const head = [it.brand, it.country, it.city].filter(Boolean).join(' • ') + (freshTxt?` • 📅 ${freshTxt}`:'') + straight + road;
+  // ===== маршрутная оптимизация =====
+  els.routeUseGeo.addEventListener('click', ()=>{
+    if(!navigator.geolocation){ setRouteStatus('Геолокация недоступна','err'); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => { els.routeFrom.value = `${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`; setRouteStatus('Локация подставлена','ok'); },
+      e => setRouteStatus('Ошибка гео: '+e.message,'err'),
+      {enableHighAccuracy:true,timeout:10000}
+    );
+  });
 
+  async function calcRoute(){
+    const to = els.routeTo.value.trim();
+    const liters = parseFloat(els.routeLiters.value);
+    if (!to || !liters || liters<=0){ setRouteStatus('Введите адрес и литры','err'); return; }
+
+    const from = els.routeFrom.value.trim(); // может быть пусто => сервер возьмёт гео из токена/не возьмёт
+    const profile = readProfileFromUI();
+    const body = {
+      origin: from ? {text: from} : {use_current: true},
+      destination: {text: to},
+      liters: liters,
+      fuel: els.routeFuel.value || profile.fuel_type || '95',
+      car: {
+        consumption_l_per_100: profile.consumption_l_per_100,
+        tank_capacity_l: profile.tank_capacity_l
+      },
+      max_detour_min: 5, // по умолчанию как просили
+      discounts: profile.discounts || []
+    };
+
+    setRouteStatus('Считаю…');
+    try{
+      const res = await fetchJSON(`${API_BASE}/route/optimize`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+      });
+      LAST_MODE='route'; LAST_ITEMS= res.best ? [res.best] : (res.candidates||[]);
+      renderRouteResult(res);
+      setRouteStatus(res.best ? 'Готово ✔' : 'Кандидаты показаны','ok');
+    }catch(e){
+      setRouteStatus('Сервер маршрута не отвечает: '+e,'err');
+      els.routeResult.innerHTML = '';
+    }
+  }
+
+  function renderRouteResult(res){
+    const best = res.best;
+    const cand = res.candidates || [];
+    const all = best ? [best, ...cand.filter(x=>x!==best)] : cand;
+    if (!all.length){ els.routeResult.innerHTML='<div class="item muted">Нет подходящих вариантов</div>'; return; }
+    els.routeResult.innerHTML = all.map((it,i)=>{
+      const price = it.price!=null?Number(it.price).toFixed(3):'—';
+      const extra = (it.drive_distance_km!=null||it.drive_duration_min!=null)
+        ? ` · объезд: ${it.drive_distance_km?.toFixed?.(1)||'—'} км, ${it.drive_duration_min?.toFixed?.(0)||'—'} мин` : '';
+      const saving = (it.saving_vs_baseline_eur!=null) ? ` · экономия: ~${it.saving_vs_baseline_eur.toFixed(2)} €` : '';
+      const total = (it.total_cost_eur!=null) ? ` · чек: ~${it.total_cost_eur.toFixed(2)} €` : '';
       return `<div class="item">
-        <div class="item-title">${i+1}. ${it.name}</div>
-        <div class="item-price">${price} €/л</div>
-        <div class="item-info">${head}</div>
-        <div class="item-info">📍 ${it.address || 'Адрес не указан'}</div>
+        <div class="item-title">${i===0?'⭐ Лучший: ':''}${it.name} — <span class="item-price">${price} €/л</span></div>
+        <div class="muted">${[it.brand,it.city,it.country].filter(Boolean).join(' · ')}${extra}${saving}${total}</div>
+        <div class="muted">${it.address||''}</div>
         <div class="links">
-          <a class="icon-btn maps" href="${gmapsDir(it)}" target="_blank" rel="noopener" title="Маршрут в Google Maps">
-            <img src="${ASSETS.maps}" alt="Google Maps">
-          </a>
-          <a class="icon-btn waze" href="${wazeNav(it)}" target="_blank" rel="noopener" title="Маршрут в Waze">
-            <img src="${ASSETS.waze}" alt="Waze">
-          </a>
+          <a class="icon-btn" href="${gmapsDir(it)}" target="_blank" title="Маршрут в Google Maps"><img src="${ASSETS.maps}" alt="Maps"></a>
+          <a class="icon-btn" href="${wazeNav(it)}"  target="_blank" title="Маршрут в Waze"><img src="${ASSETS.waze}"  alt="Waze"></a>
         </div>
       </div>`;
     }).join('');
   }
 
-  // ---------- Отправка в чат: теперь актуальные фильтры + режим + limit + geo + превью ----------
-  function sendToBot(){
-    if(!tg || !tg.sendData){ setStatus('❌ Откройте через Telegram для отправки','err'); return; }
-    const payload = {
-      mode: LAST_MODE,                                      // 'search' | 'nearby'
-      filters: {
-        country: els.country.value || '',
-        city: els.city.value || '',
-        brands: selValues(els.brand),
-        fuel: (els.fuel.value || '95').toLowerCase(),
-        fresh: selValues(els.fresh),
-        limit: parseInt(els.limit.value, 10) || 50          // << важное поле
-      },
-      geo: LAST_GEO,                                        // {lat,lon} если nearby
-      preview: (LAST_ITEMS||[]).slice(0,10).map(it => ({    // лёгкое превью для бота (может игнорировать)
-        id: it.id, name: it.name, brand: it.brand, price: it.price,
-        city: it.city, country: it.country, address: it.address,
-        lat: it.lat, lon: it.lon, fresh_label: it.fresh_label,
-        drive_distance_km: it.drive_distance_km, drive_duration_min: it.drive_duration_min
-      })),
-      nonce: Date.now()                                     // чтобы уж точно не спутать с «старым»
-    };
-    try{
-      tg.sendData(JSON.stringify(payload));
-      setStatus('✅ Отправлено в чат!', 'ok');
-    }catch(e){
-      setStatus('❌ Не удалось отправить', 'err');
-    }
-  }
-
-  // ---- остальной код My Car/табов оставляем как был (если нужен — он у тебя уже в файле) ----
-  // Ниже просто привязки событий и первоначальная инициализация:
-
-  function makeDiscRow(brand='',off=''){ const row=document.createElement('div'); row.className='disc-row';
-    const sel=document.createElement('select'); sel.innerHTML=(ALL_BRANDS||[]).map(b=>`<option>${b}</option>`).join(''); if(brand) sel.value=brand;
+  // ===== discounts editor (упрощённый) =====
+  function makeDiscRow(brand='',off=''){
+    const row=document.createElement('div'); row.className='row';
+    const sel=document.createElement('select'); sel.style.maxWidth='260px';
+    sel.innerHTML=(ALL_BRANDS||[]).map(b=>`<option>${b}</option>`).join(''); if(brand) sel.value=brand;
     const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.min='0'; inp.placeholder='0.04'; if(off!==''&&off!=null) inp.value=off;
-    const del=document.createElement('button'); del.className='btn-secondary'; del.innerHTML='🗑️'; del.onclick=()=>row.remove();
-    row.append(sel,inp,del); return row; }
-  function loadDiscounts(el,discs){ el.innerHTML=''; (discs||[]).forEach(d=>el.appendChild(makeDiscRow(d.brand,d.off_eur_per_l))); if(!discs||!discs.length) el.appendChild(makeDiscRow()); }
-  function collectDiscounts(el){ const out=[]; el.querySelectorAll('.disc-row').forEach(r=>{ const b=r.querySelector('select')?.value||''; const off=parseFloat(r.querySelector('input')?.value); if(b&&!isNaN(off)&&off>0) out.push({brand:b,off_eur_per_l:+off}); }); return out; }
-  function readMyCarFromUI(){ return {
-    fuel_type:els.carFuel.value||'95', consumption_l_per_100:+els.carCons.value||null, tank_capacity_l:+els.carTank.value||null,
-    current_level_l:+els.carCurrent.value||null, time_value_eur_per_hour:+els.carTimeVal.value||0, max_detour_min:+els.carDetour.value||0,
-    preferred_brands:selValues(els.carPrefBrands), discounts:collectDiscounts(els.discList)
-  }; }
-  function writeMyCarToUI(mc){ if(!mc) return; if(mc.fuel_type) els.carFuel.value=mc.fuel_type;
-    if(mc.consumption_l_per_100!=null) els.carCons.value=mc.consumption_l_per_100; if(mc.tank_capacity_l!=null) els.carTank.value=mc.tank_capacity_l;
-    if(mc.current_level_l!=null) els.carCurrent.value=mc.current_level_l; if(mc.time_value_eur_per_hour!=null) els.carTimeVal.value=mc.time_value_eur_per_hour;
-    if(mc.max_detour_min!=null) els.carDetour.value=mc.max_detour_min; preselect(els.carPrefBrands, mc.preferred_brands||[]); loadDiscounts(els.discList, mc.discounts||[]); }
-  function applyMyCarToFilters(mc){ if(!mc) mc=loadMyCar(); if(mc.fuel_type) els.fuel.value=mc.fuel_type;
-    if(mc.preferred_brands && mc.preferred_brands.length){ preselect(els.brand, mc.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); } saveState(); }
-  function switchTab(name){ const isStations=(name==='stations'); els.screenStations.classList.toggle('active',isStations);
-    els.screenCar.classList.toggle('active',!isStations); els.tabStations.classList.toggle('active',isStations); els.tabCar.classList.toggle('active',!isStations); }
+    const del=document.createElement('button'); del.className='btn secondary'; del.textContent='Удалить'; del.style.maxWidth='120px'; del.onclick=()=>row.remove();
+    row.append(sel,inp,del); return row;
+  }
+  function loadDiscounts(el, arr){ el.innerHTML=''; (arr||[]).forEach(d=>el.appendChild(makeDiscRow(d.brand,d.off_eur_per_l))); if(!arr||!arr.length) el.appendChild(makeDiscRow()); }
+  function collectDiscounts(el){ const out=[]; el.querySelectorAll('.row').forEach(r=>{ const b=r.querySelector('select')?.value||''; const off=parseFloat(r.querySelector('input')?.value); if(b&&!isNaN(off)&&off>0) out.push({brand:b,off_eur_per_l:+off}); }); return out; }
 
-  els.country.addEventListener('change', ()=> onCountryChange(''));
-  els.apply.addEventListener('click', applyFilters);
-  els.nearby.addEventListener('click', findNearby);
-  els.send.addEventListener('click', sendToBot);
+  // ===== tabs =====
+  function switchTab(t){ els.sStations.classList.toggle('active', t==='stations');
+    els.sRoute.classList.toggle('active', t==='route'); els.sCar.classList.toggle('active', t==='car');
+    els.tStations.classList.toggle('active', t==='stations'); els.tRoute.classList.toggle('active', t==='route'); els.tCar.classList.toggle('active', t==='car'); }
+  els.tStations.onclick=()=>switchTab('stations'); els.tRoute.onclick=()=>switchTab('route'); els.tCar.onclick=()=>switchTab('car');
 
-  els.discAdd.addEventListener('click', ()=> els.discList.appendChild(makeDiscRow()));
-  els.carSave.addEventListener('click', ()=>{ const mc=readMyCarFromUI(); saveMyCar(mc); setCarStatus('💾 Профиль сохранен!','ok'); });
-  els.carApplyToFilters.addEventListener('click', ()=>{ applyMyCarToFilters(); setCarStatus('🔄 Применено к фильтрам!','ok'); switchTab('stations'); applyFilters(); });
-  els.carReset.addEventListener('click', ()=>{ if (confirm('Удалить профиль автомобиля?')) { localStorage.removeItem('fuelMyCar'); writeMyCarToUI({}); setCarStatus('🗑️ Профиль очищен','ok'); }});
-  els.tabStations.addEventListener('click', ()=> switchTab('stations'));
-  els.tabCar.addEventListener('click', ()=> switchTab('car'));
+  // ===== events =====
+  els.country.onchange = onCountryChange;
+  els.apply.onclick = applyFilters;
+  els.nearby.onclick = findNearby;
+  els.send.onclick = ()=> {
+    if(!tg?.sendData){ setStatus('Открой через Telegram','err'); return; }
+    const payload = {
+      mode: LAST_MODE,
+      filters: {
+        country: els.country.value||'', city: els.city.value||'',
+        brands: selValues(els.brand), fuel: (els.fuel.value||'95').toLowerCase(),
+        fresh: selValues(els.fresh), limit: parseInt(els.limit.value||20,10)
+      },
+      geo: LAST_GEO,
+      preview: (LAST_ITEMS||[]).slice(0,10),
+      nonce: Date.now()
+    };
+    try{ tg.sendData(JSON.stringify(payload)); setStatus('Отправлено ✔','ok'); }catch(e){ setStatus('Ошибка отправки','err'); }
+  };
 
-  const saved=restoreState(); if(saved.f) els.fuel.value=saved.f; if(saved.l) els.limit.value=saved.l;
-  const mcSaved=loadMyCar(); writeMyCarToUI(mcSaved); if(mcSaved.fuel_type) els.fuel.value=mcSaved.fuel_type;
-  try{ const g=JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat!=null && g.lon!=null) setLastGeo(g.lat,g.lon);}catch{}
-  if (tg) { registerFromWebApp(); }
-  loadCountries().then(()=>{ setOptions(els.carPrefBrands, ALL_BRANDS); preselect(els.carPrefBrands, mcSaved.preferred_brands||[]);
-    loadDiscounts(els.discList, mcSaved.discounts||[]); if(mcSaved.preferred_brands&&mcSaved.preferred_brands.length){ preselect(els.brand, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b))); }
-    else if(saved.brs){ preselect(els.brand, saved.brs); } preselect(els.fresh, saved.frs||[]); applyFilters(); });
+  els.discAdd.onclick = ()=> els.discList.appendChild(makeDiscRow());
+  els.carSave.onclick = ()=> saveProfile(readProfileFromUI());
+  els.carApply.onclick = ()=> { const p=readProfileFromUI(); saveProfile(p); els.fuel.value = p.fuel_type || '95'; setCarStatus('Применено к фильтрам','ok'); switchTab('stations'); applyFilters(); };
+
+  els.routeCalc.onclick = calcRoute;
+
+  // ===== init =====
+  (async ()=>{
+    await register();
+    await loadMeta();
+    await onCountryChange();
+    await loadProfile();   // подтянет профиль пользователя (или локально)
+    // восстановим последнюю гео-метку (для UI):
+    try{ const g=JSON.parse(localStorage.getItem('fuelFinderLastGeo')||'{}'); if(g.lat&&g.lon) setLastGeo(g.lat,g.lon);}catch{}
+    applyFilters();
+  })();
+
 })();
 </script>
 </body>
