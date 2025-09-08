@@ -110,6 +110,14 @@
       .wrap{padding:12px 8px 100px}.card{padding:16px}
     }
     .loading{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    /* подсветка победителя */
+    .item.best{border-color:#10b981; box-shadow:inset 0 0 0 2px rgba(16,185,129,.35), var(--shadow-lg)}
+    .item .badge-best{
+      position:absolute; top:10px; right:10px; 
+      background:rgba(16,185,129,.15); color:#10b981; 
+      border:1px solid rgba(16,185,129,.5); border-radius:10px;
+      padding:4px 8px; font-size:11px; font-weight:700; letter-spacing:.3px;
+    }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -165,6 +173,7 @@
       <div class="row">
         <button id="apply"  class="btn-primary">🔍 Показать</button>
         <button id="nearby" class="btn-nearby">📍 Найти рядом</button>
+        <button id="best"   class="btn-secondary">⭐ Лучшее предложение</button>
         <button id="send"   class="btn-secondary">📤 Отправить в чат</button>
       </div>
 
@@ -188,12 +197,13 @@
       <div class="grid grid-route">
         <div>
           <label for="route_to">📍 Куда едем (адрес/место)</label>
-          <input id="route_to" type="text" placeholder="Например: Riga, Brīvības 1 или Tallinn Old Town">
-          <div class="hint">Старт возьмём по геолокации, если не задан ранее.</div>
+          <input id="route_to" type="text" placeholder="Например: Riga, Brivibas 1 или 'Tallinn old town'">
+          <div class="hint">Адрес назначения. Старт возьмём по геолокации.</div>
         </div>
         <div>
           <label for="route_liters">⛽ Сколько заправить (л)</label>
           <input id="route_liters" type="number" step="1" min="1" placeholder="Например, 20">
+          <div class="hint">Этот параметр обязателен для корректной выгодности</div>
         </div>
         <div>
           <label for="route_fuel">Тип топлива</label>
@@ -230,6 +240,7 @@
       <div class="row">
         <button id="route_myloc" class="btn-secondary">📍 Моя локация</button>
         <button id="route_go" class="btn-primary">🧮 Посчитать по пути</button>
+        <button id="route_best" class="btn-secondary">⭐ Лучшее по пути</button>
         <button id="route_send" class="btn-secondary">📤 Отправить в чат</button>
       </div>
 
@@ -308,17 +319,14 @@
   // Положи эти картинки рядом с index.html (или поправь пути)
   const ASSETS = { maps: "maps.png", waze: "waze.png" };
 
-  // Текущий режим + показанный список
+  // Текущее состояние
   let LAST_MODE = 'search';     // 'search' | 'nearby' | 'route'
   let LAST_ITEMS = [];
-  let LAST_GEO = null;          // {lat,lon} старт для nearby/route
+  let LAST_GEO = null;          // {lat,lon}
+  let ROUTE_TO_TEXT = '';
+  let ROUTE_LITERS = null;
 
-  // ====== ВСПОМОГАТЕЛЬНОЕ: tg_init для /user/profile ======
-  function getTgInit() {
-    try { return tg && tg.initData ? tg.initData : null; } catch { return null; }
-  }
-
-  // Регистрация пользователя (WebApp)
+  // Регистрация пользователя
   async function registerFromWebApp(){
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return;
     const u = tg.initDataUnsafe.user;
@@ -342,12 +350,12 @@
     // stations
     country:$('#country'), city:$('#city'), brand:$('#brand'), fuel:$('#fuel'),
     fresh:$('#fresh'), limit:$('#limit'), apply:$('#apply'), nearby:$('#nearby'),
-    send:$('#send'), list:$('#list'), status:$('#status'), lastGeo:$('#lastGeoChip'),
-    geoRow:$('#geoRow'),
+    best:$('#best'), send:$('#send'), list:$('#list'), status:$('#status'),
+    lastGeo:$('#lastGeoChip'), geoRow:$('#geoRow'),
     // route
     routeTo:$('#route_to'), routeLiters:$('#route_liters'), routeFuel:$('#route_fuel'),
     routeBrands:$('#route_brands'), routeFresh:$('#route_fresh'), routeLimit:$('#route_limit'),
-    routeMyLoc:$('#route_myloc'), routeGo:$('#route_go'), routeSend:$('#route_send'),
+    routeMyLoc:$('#route_myloc'), routeGo:$('#route_go'), routeBest:$('#route_best'), routeSend:$('#route_send'),
     routeStatus:$('#route_status'), routeList:$('#route_list'),
     // car
     carFuel:$('#car_fuel_type'), carCons:$('#car_consumption'), carTank:$('#car_tank'),
@@ -362,7 +370,6 @@
 
   // Utils
   async function fetchJSON(url){ const r=await fetch(url,{mode:'cors'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
-  async function fetchJSONPost(url, body){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${await r.text().catch(()=>r.status)}`); return r.json(); }
   function setStatus(m,c=''){ els.status.textContent=m; els.status.className='status '+(c||''); }
   function setRouteStatus(m,c=''){ els.routeStatus.textContent=m; els.routeStatus.className='status '+(c||''); }
   function setCarStatus(m,c=''){ els.carStatus.textContent=m; els.carStatus.className='status '+(c||''); }
@@ -370,8 +377,11 @@
   function setOptions(s, opts){ s.innerHTML = opts.map(o=>`<option value="${o}">${o}</option>`).join(''); }
   function preselect(s, vals){ const set=new Set(vals||[]); Array.from(s.options).forEach(o=>o.selected=set.has(o.value)); }
   function setLastGeo(lat,lon){ if(lat==null||lon==null){ els.geoRow.style.display='none'; return;} els.geoRow.style.display='flex'; els.lastGeo.innerHTML=`📍 Последняя локация: ${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
+  function getSavedCar(){ try{ return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); }catch{return{}} }
+  function getLastLiters(){ return parseFloat(localStorage.getItem('lastLiters')||'') || null; }
+  function setLastLiters(v){ if(!isNaN(v)&&v>0) localStorage.setItem('lastLiters', String(v)); }
 
-  // ====== ЛОКАЛЬНОЕ СОХРАНЕНИЕ ======
+  // Persist
   function saveState(){ localStorage.setItem('fuelFinderState', JSON.stringify({
     c:els.country.value, ci:els.city.value, brs:selValues(els.brand),
     f:els.fuel.value, l:els.limit.value, frs:selValues(els.fresh)
@@ -385,24 +395,6 @@
   function saveMyCar(mc){ localStorage.setItem('fuelMyCar', JSON.stringify(mc)); }
   function loadMyCar(){ try{ return JSON.parse(localStorage.getItem('fuelMyCar')||'{}'); }catch{return{}} }
 
-  // ====== СЕРВЕРНЫЙ ПРОФИЛЬ (новое) ======
-  async function loadProfileFromServer(){
-    const tg_init = getTgInit(); if(!tg_init) return null;
-    try{
-      const url = `${API_BASE}/user/profile?tg_init=${encodeURIComponent(tg_init)}`;
-      const j = await fetchJSON(url);
-      if (j && j.ok && j.profile) return j.profile;
-    }catch(e){ /* молча — оффлайн/нет эндпоинта */ }
-    return null;
-  }
-  async function saveProfileToServer({car, filters}){
-    const tg_init = getTgInit(); if(!tg_init) return;
-    const payload = { tg_init };
-    if (car) payload.car = car;
-    if (filters) payload.filters = filters;
-    try{ await fetchJSONPost(`${API_BASE}/user/profile`, payload); }catch(e){ /* тихо */ }
-  }
-
   // Meta
   let ALL_BRANDS = [];
   async function loadCountries(){
@@ -415,22 +407,12 @@
       fillBrands(ALL_BRANDS, restoreState().brs||[]);
       setOptions(els.routeBrands, ALL_BRANDS);
       setOptions(els.carPrefBrands, ALL_BRANDS);
-
-      // ====== Загрузим серверный профиль и применим ======
-      const server = await loadProfileFromServer();
-      const localFilters = restoreState();
-      const localCar = loadMyCar();
-      // ФИЛЬТРЫ: приоритет сервер → локальные
-      const filters = server?.filters || localFilters || {};
-      if (filters.country && countries.includes(filters.country)) els.country.value = filters.country;
-      await onCountryChange(filters.city || '');
-      if (filters.city) els.city.value = filters.city;
-      if (filters.brands) preselect(els.brand, filters.brands.filter(b => (ALL_BRANDS||[]).includes(b)));
-      if (filters.fuel) els.fuel.value = filters.fuel;
-      if (filters.fresh) preselect(els.fresh, filters.fresh);
-      if (filters.limit) els.limit.value = String(filters.limit);
-
-      // ROUTE: восстановим локальные (сервер не храним отдельно)
+      preselect(els.carPrefBrands, loadMyCar().preferred_brands||[]);
+      const saved=restoreState();
+      if(saved.c && countries.includes(saved.c)) els.country.value=saved.c;
+      await onCountryChange(saved.ci);
+      preselect(els.fresh, saved.frs||[]);
+      // restore route state
       const rs=loadRouteState();
       if(rs.to) els.routeTo.value=rs.to;
       if(rs.liters) els.routeLiters.value=rs.liters;
@@ -438,11 +420,6 @@
       if(rs.brands) preselect(els.routeBrands, rs.brands);
       if(rs.fresh) preselect(els.routeFresh, rs.fresh);
       if(rs.limit) els.routeLimit.value=rs.limit;
-
-      // CAR: приоритет сервер → локальные
-      const car = server?.car || localCar || {};
-      writeMyCarToUI(car);
-
       setStatus('✅ Готов к поиску');
     }catch(e){ console.error(e); setStatus('❌ Ошибка загрузки данных','err'); els.country.innerHTML=`<option>Ошибка</option>`; }
     finally{ els.country.disabled=false; els.country.classList.remove('loading'); }
@@ -510,13 +487,10 @@
       const j=await fetchJSON(`${API_BASE}/search?`+qs.toString());
       let items=(j.items||[]).filter(it=>passesFreshFilter(it, wantFresh));
       if (items.length > limit) items = items.slice(0, limit);
-      LAST_MODE='search'; LAST_ITEMS=items;
+      LAST_MODE='search'; LAST_ITEMS=items; LAST_GEO=null;
       setStatus(`✅ Найдено: ${items.length}`);
       renderList(items);
-      // сохраняем фильтры локально и на сервере
-      const filters = { country: els.country.value||'', city: els.city.value||'', brands, fuel: els.fuel.value||'95', fresh: wantFresh, limit };
       saveState();
-      saveProfileToServer({ filters });
     }catch(e){
       console.error(e); setStatus('❌ Ошибка поиска','err');
       els.list.innerHTML=`<div class="item"><span style="color:#ef4444">${String(e).slice(0,200)}</span></div>`;
@@ -572,9 +546,6 @@
         renderListWithDistance(items);
         localStorage.setItem('fuelFinderLastGeo', JSON.stringify(LAST_GEO));
         setLastGeo(latitude, longitude);
-
-        // обновим фильтры на сервере (страна/город тут неизвестны — только прочие)
-        saveProfileToServer({ filters: { country: els.country.value||'', city: els.city.value||'', brands, fuel: els.fuel.value||'95', fresh: wantFresh, limit }});
       }catch(e){ console.error(e); setStatus('❌ Ошибка поиска рядом','err'); }
     }, err=> setStatus('❌ Не удалось получить геолокацию: '+err.message,'err'),
        { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
@@ -609,7 +580,66 @@
     }).join('');
   }
 
-  // ROUTE (с поддержкой GET /route и фолбэком на POST /route/optimize)
+  // ===== ВЫГОДНОСТЬ / ЛУЧШЕЕ =====
+  function calcScore(it, liters, car, mode){
+    const p = (it.price!=null) ? +it.price : Infinity;
+    const fuelCost = (isFinite(p) && liters>0) ? p * liters : (isFinite(p)?p:Infinity);
+
+    // доп.км: в nearby/route используем drive_distance_km; в search — 0 (нет данных)
+    let extraKm = 0;
+    if ((mode==='nearby' || mode==='route') && it.drive_distance_km!=null) extraKm = +it.drive_distance_km;
+
+    const cons = +car.consumption_l_per_100 || 0;
+    const tripFuelLiters = (extraKm>0 && cons>0) ? (cons/100)*extraKm : 0;
+    const tripFuelCost = tripFuelLiters * (isFinite(p)?p:0);
+
+    const tval = +car.time_value_eur_per_hour || 0;
+    const minutes = it.drive_duration_min!=null ? +it.drive_duration_min : 0;
+    const timePenalty = (tval>0 && minutes>0) ? (tval/60)*minutes : 0;
+
+    const total = fuelCost + tripFuelCost + timePenalty;
+    return { total, fuelCost, tripFuelCost, timePenalty, extraKm, pricePerL:p };
+  }
+
+  function pickBest(items, liters, mode){
+    const car = getSavedCar() || {};
+    let best = null, bestIdx = -1, bestScore = Infinity;
+
+    items.forEach((it, idx) => {
+      const s = calcScore(it, liters, car, mode);
+      const score = s.total;
+      if (score < bestScore){
+        best = { item: it, idx, breakdown: s };
+        bestScore = score;
+      }
+    });
+    return best;
+  }
+
+  function highlightBest(containerEl, index){
+    containerEl.querySelectorAll('.item').forEach(e=>{ e.classList.remove('best'); const b=e.querySelector('.badge-best'); if(b) b.remove(); });
+    const cards = containerEl.querySelectorAll('.item');
+    if (!cards.length || index<0 || index>=cards.length) return;
+    const el = cards[index];
+    el.classList.add('best');
+    const badge = document.createElement('div');
+    badge.className = 'badge-best';
+    badge.textContent = 'ЛУЧШЕЕ';
+    el.appendChild(badge);
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  function promptLiters(defaultVal){
+    let v = window.prompt('Сколько литров планируете заправить?', defaultVal?String(defaultVal):'20');
+    if (v==null) return null;
+    v = String(v).replace(',', '.').trim();
+    const n = parseFloat(v);
+    if (isNaN(n) || n<=0) { alert('Введите положительное число литров'); return null; }
+    setLastLiters(n);
+    return n;
+  }
+
+  // ROUTE
   function setRouteFromCarIfAny(){
     const mc=loadMyCar();
     if(mc && mc.fuel_type) els.routeFuel.value = mc.fuel_type;
@@ -625,33 +655,6 @@
       );
     });
   }
-
-  async function callRouteAPI(paramsObj){
-    // 1) пробуем GET /route?... ; 2) если 404/405 — POST /route/optimize
-    const usp = new URLSearchParams(paramsObj);
-    // попытка GET
-    try{
-      const r = await fetch(`${API_BASE}/route?`+usp.toString(), {mode:'cors'});
-      if (r.ok) return await r.json();
-      if (r.status !== 404 && r.status !== 405) {
-        const t = await r.text(); throw new Error(`${r.status} ${r.statusText}: ${t}`);
-      }
-    }catch(e){ /* пойдём на POST */ }
-
-    // POST /route/optimize (тело в JSON)
-    const body = {
-      from_lat: +paramsObj.from_lat,
-      from_lon: +paramsObj.from_lon,
-      to: paramsObj.to,
-      fuel: paramsObj.fuel,
-      liters: paramsObj.liters ? +paramsObj.liters : null,
-      brands: (paramsObj.brands||'').split(',').filter(Boolean),
-      fresh: (paramsObj.fresh||'').split(',').filter(Boolean),
-      limit: paramsObj.limit ? +paramsObj.limit : 20
-    };
-    return await fetchJSONPost(`${API_BASE}/route/optimize`, body);
-  }
-
   async function routeCalculate(){
     const to = (els.routeTo.value||'').trim();
     const liters = parseFloat(els.routeLiters.value||'');
@@ -661,7 +664,8 @@
     const limit  = parseInt(els.routeLimit.value,10) || 20;
 
     if(!to){ setRouteStatus('❌ Укажите адрес назначения','err'); return; }
-    // Старт: если нет сохранённой — берём текущую
+    if(isNaN(liters)||liters<=0){ setRouteStatus('❌ Укажите, сколько литров заправить','err'); return; }
+
     let start = LAST_GEO;
     if(!start){
       try{ start = await routeUseMyLocation(); }
@@ -669,22 +673,24 @@
     }
 
     setRouteStatus('🧮 Считаю кандидатов по пути…');
-    const params = {
+    const qs = new URLSearchParams({
       from_lat:start.lat, from_lon:start.lon, to:to,
-      fuel, liters: (!isNaN(liters) && liters>0) ? String(liters) : '',
-      brands:brands.join(','), fresh:fresh.join(','), limit
-    };
+      fuel, liters: liters, brands:brands.join(','), fresh:fresh.join(','), limit
+    });
 
     try{
-      const j = await callRouteAPI(params);
-      let items = (j.items||[]);
-      // фильтр свежести на клиенте (если бекенд вернул всё)
-      items = items.filter(it => passesFreshFilter(it, fresh));
+      const j = await fetchJSON(`${API_BASE}/route?`+qs.toString());
+      let items = (j.items||[]).filter(it => passesFreshFilter(it, fresh));
       if(items.length > limit) items = items.slice(0, limit);
 
-      LAST_MODE='route'; LAST_ITEMS=items;
+      LAST_MODE='route'; LAST_ITEMS=items; ROUTE_TO_TEXT=to; ROUTE_LITERS = liters;
       els.routeList.innerHTML = renderRouteItems(items);
       setRouteStatus(`✅ Подходящих станций: ${items.length}`);
+
+      // сразу подсветим лучшее
+      const best = pickBest(items, liters, 'route');
+      if (best) highlightBest(els.routeList, best.idx);
+
       saveRouteState();
     }catch(e){
       console.error(e);
@@ -722,27 +728,22 @@
 
   // SEND TO BOT
   function sendToBot(modeOverride){
-    if(!tg || !tg.sendData){ (modeOverride==='route'?setRouteStatus:setStatus)('❌ Откройте через Telegram для отправки','err'); return; }
-    const mode = modeOverride || LAST_MODE;
-    const filters = (mode==='route') ? {
-      brands: selValues(els.routeBrands),
-      fuel: (els.routeFuel.value || '95').toLowerCase(),
-      fresh: selValues(els.routeFresh),
-      limit: parseInt(els.routeLimit.value, 10) || 50
-    } : {
-      country: els.country.value || '',
-      city: els.city.value || '',
-      brands: selValues(els.brand),
-      fuel: (els.fuel.value || '95').toLowerCase(),
-      fresh: selValues(els.fresh),
-      limit: parseInt(els.limit.value, 10) || 50
-    };
+    const isRoute = modeOverride==='route';
+    const statusFn = isRoute ? setRouteStatus : setStatus;
 
+    if(!tg || !tg.sendData){ statusFn('❌ Откройте через Telegram для отправки','err'); return; }
     const payload = {
-      mode,
-      filters,
+      mode: modeOverride || LAST_MODE,
+      filters: {
+        country: els.country.value || '',
+        city: els.city.value || '',
+        brands: selValues( isRoute ? els.routeBrands : els.brand),
+        fuel: ((isRoute ? els.routeFuel.value : els.fuel.value) || '95').toLowerCase(),
+        fresh: selValues( isRoute ? els.routeFresh : els.fresh),
+        limit: parseInt( (isRoute ? els.routeLimit.value : els.limit.value), 10) || 50
+      },
       geo: LAST_GEO,
-      route: mode==='route' ? { to: els.routeTo.value || '', liters: els.routeLiters.value || '' } : undefined,
+      route: isRoute ? { to: els.routeTo.value || '', liters: els.routeLiters.value || '' } : undefined,
       preview: (LAST_ITEMS||[]).slice(0,10).map(it => ({
         id: it.id, name: it.name, brand: it.brand, price: it.price,
         city: it.city, country: it.country, address: it.address,
@@ -753,9 +754,9 @@
     };
     try{
       tg.sendData(JSON.stringify(payload));
-      (mode==='route'?setRouteStatus:setStatus)('✅ Отправлено в чат!','ok');
+      statusFn('✅ Отправлено в чат!','ok');
     }catch(e){
-      (mode==='route'?setRouteStatus:setStatus)('❌ Не удалось отправить','err');
+      statusFn('❌ Не удалось отправить','err');
     }
   }
 
@@ -791,32 +792,39 @@
   els.country.addEventListener('change', ()=> onCountryChange(''));
   els.apply.addEventListener('click', applyFilters);
   els.nearby.addEventListener('click', findNearby);
-  els.send.addEventListener('click', ()=> sendToBot()); // отправляем текущий LAST_MODE
+  els.best.addEventListener('click', async ()=>{
+    // если пусто — загрузим
+    if (!LAST_ITEMS || !LAST_ITEMS.length){
+      await applyFilters();
+      if (!LAST_ITEMS || !LAST_ITEMS.length){ setStatus('Нет данных для выбора лучшего','err'); return; }
+    }
+    // спросим литры, если не знаем
+    let liters = getLastLiters();
+    if (!liters) liters = promptLiters(20);
+    if (!liters) return;
+    const best = pickBest(LAST_ITEMS, liters, LAST_MODE);
+    if (!best) { setStatus('Не удалось определить лучшее','err'); return; }
+    highlightBest(els.list, best.idx);
+    setStatus('⭐ Показано лучшее предложение','ok');
+  });
+  els.send.addEventListener('click', ()=> sendToBot('search'));
 
   els.routeMyLoc.addEventListener('click', routeUseMyLocation);
-  els.routeGo.addEventListener('click', routeCalculate);
+  els.routeGo.addEventListener('click', async ()=>{ await routeCalculate(); });
+  els.routeBest.addEventListener('click', ()=>{
+    const liters = parseFloat(els.routeLiters.value||'');
+    if(isNaN(liters)||liters<=0){ setRouteStatus('Укажите литры для расчёта','err'); return; }
+    if(!LAST_ITEMS || !LAST_ITEMS.length){ setRouteStatus('Сначала нажмите «Посчитать по пути»','err'); return; }
+    const best = pickBest(LAST_ITEMS, liters, 'route');
+    if (!best) { setRouteStatus('Не удалось определить лучшее','err'); return; }
+    highlightBest(els.routeList, best.idx);
+    setRouteStatus('⭐ Показано лучшее по пути','ok');
+  });
   els.routeSend.addEventListener('click', ()=> sendToBot('route'));
 
-  els.carSave.addEventListener('click', ()=>{
-    const mc=readMyCarFromUI();
-    saveMyCar(mc);
-    saveProfileToServer({ car: mc });
-    setCarStatus('💾 Профиль сохранен!','ok');
-  });
-  els.carApplyToFilters.addEventListener('click', ()=>{
-    applyMyCarToFilters();
-    setCarStatus('🔄 Применено к фильтрам!','ok');
-    switchTab('stations'); 
-    applyFilters();
-  });
-  els.carReset.addEventListener('click', ()=>{
-    if (confirm('Удалить профиль автомобиля?')) {
-      localStorage.removeItem('fuelMyCar');
-      writeMyCarToUI({});
-      saveProfileToServer({ car: {} });
-      setCarStatus('🗑️ Профиль очищен','ok');
-    }
-  });
+  els.carSave.addEventListener('click', ()=>{ const mc=readMyCarFromUI(); saveMyCar(mc); setCarStatus('💾 Профиль сохранен!','ok'); });
+  els.carApplyToFilters.addEventListener('click', ()=>{ applyMyCarToFilters(); setCarStatus('🔄 Применено к фильтрам!','ok'); switchTab('stations'); applyFilters(); });
+  els.carReset.addEventListener('click', ()=>{ if (confirm('Удалить профиль автомобиля?')) { localStorage.removeItem('fuelMyCar'); writeMyCarToUI({}); setCarStatus('🗑️ Профиль очищен','ok'); }});
 
   els.tabStations.addEventListener('click', ()=> switchTab('stations'));
   els.tabRoute.addEventListener('click',    ()=> { switchTab('route'); setRouteFromCarIfAny(); });
@@ -829,7 +837,6 @@
   if (tg) { registerFromWebApp(); }
 
   loadCountries().then(()=>{ 
-    // если есть предпочтения — подставим
     if(mcSaved.preferred_brands && mcSaved.preferred_brands.length){
       preselect(els.brand, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b)));
       preselect(els.routeBrands, mcSaved.preferred_brands.filter(b=>(ALL_BRANDS||[]).includes(b)));
@@ -838,7 +845,6 @@
       preselect(els.routeBrands, saved.brs); 
     }
     preselect(els.fresh, saved.frs||[]);
-    // автопоиск
     applyFilters();
   });
 })();
